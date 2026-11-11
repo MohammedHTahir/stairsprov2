@@ -1,0 +1,1 @@
+ALTER TABLE public.visualization_images ADD COLUMN world jsonb;

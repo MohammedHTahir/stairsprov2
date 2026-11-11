@@ -1,0 +1,11 @@
+# Roadmap
+- [x] Phase 1: wall mounting, brackets, floor shoe, slab plate
+- [x] Phase 2: 2-point real-scale calibration on photo
+- [x] Phase 3: Blender/CAD (.glb) import, modular parts
+- [x] Whole-room scan import and exploration without staircase controls
+- [x] Verify room scan persistence and viewer
+- [x] In-app multi-photo room capture (camera, gallery, ZIP export)
+- [x] Replace scanning-first experience with room photo + staircase reference AI visualization
+- [x] Add placement, finishes, comparison, refinements, and saved generation history
+- [x] Enable Cloud for accounts and saved visualization projects
+- [x] Verify authenticated generation, refinement, saving, and owner isolation
