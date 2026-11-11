@@ -4,8 +4,15 @@ const GATEWAY_URL = "https://ai-gateway.vercel.sh/v1/images/edits";
 const MODEL = "openai/gpt-image-2.5-sunburst";
 const PING_MS = 10_000;
 
-export function getGatewayKey(): string | undefined {
-  return process.env["AI_GATEWAY_API_KEY"] || undefined;
+// Prefers an explicit API key; otherwise uses the OIDC token Vercel attaches to each
+// function request (or the env token in local `vercel env pull` setups).
+export function getGatewayKey(request?: Request): string | undefined {
+  return (
+    process.env["AI_GATEWAY_API_KEY"] ||
+    request?.headers.get("x-vercel-oidc-token") ||
+    process.env["VERCEL_OIDC_TOKEN"] ||
+    undefined
+  );
 }
 
 type GatewayImageResponse = {

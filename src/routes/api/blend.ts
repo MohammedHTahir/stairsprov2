@@ -5,8 +5,8 @@ export const Route = createFileRoute("/api/blend")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = getGatewayKey();
-        if (!apiKey) return new Response("Missing AI_GATEWAY_API_KEY", { status: 500 });
+        const apiKey = getGatewayKey(request);
+        if (!apiKey) return new Response("AI Gateway is not configured", { status: 500 });
         const form = await request.formData();
         return editImage(apiKey, form);
       },

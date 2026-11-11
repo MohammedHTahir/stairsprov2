@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { visualizationSchema, buildVisualizationPrompt, buildHousePrompt } from '@/lib/visualization';
 export const Route = createFileRoute('/api/visualize')({ server: { handlers: { POST: async ({ request }) => {
-  const { getGatewayKey } = await import('@/lib/image-gateway.server'); const apiKey = getGatewayKey();
+  const { getGatewayKey } = await import('@/lib/image-gateway.server'); const apiKey = getGatewayKey(request);
   if (!apiKey) return Response.json({ message: 'Image generation is not configured.' }, { status: 500 });
   try {
     const input = await request.formData();
