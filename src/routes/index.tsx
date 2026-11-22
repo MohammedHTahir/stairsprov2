@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { StaircaseGallery } from '@/components/StaircaseGallery';
+import { VisualizationWorkspace } from '@/components/VisualizationWorkspace';
 export const Route = createFileRoute('/')({ head: () => ({ meta: [
-  { title: 'Sahaab Stair Studio — Staircase Inspiration Gallery' },
-  { name: 'description', content: 'Explore real staircase photography by layout, material and finish. Choose a reference for your staircase design.' },
+  { title: 'Sahaab Stair Studio — Staircase visualization' },
+  { name: 'description', content: 'Visualize premium timber, steel and glass staircases in your own room.' },
   { property: 'og:title', content: 'Sahaab Stair Studio — Staircase Inspiration Gallery' },
-  { property: 'og:description', content: 'Browse staircase ideas and select a real-world design reference.' },
+  { property: 'og:description', content: 'Upload your room and configure a contemporary timber-and-steel staircase.' },
   { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary_large_image' },
-] }), component: StaircaseGallery });
+] }), component: VisualizationWorkspace });
