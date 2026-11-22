@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-type Inspiration = { id: string; title: string; imageUrl: string; sourceUrl: string; author: string; license: string; attribution: string };
+type Inspiration = { id: string; title: string; imageUrl: string; sourceUrl: string; author: string; license: string; attribution: string; layout?: string; category?: string };
 type GalleryResponse = { images?: Inspiration[]; nextOffset?: number | null; message?: string };
 const layouts = [
   { id: 'all', label: 'All stairs' }, { id: 'straight', label: 'Straight' }, { id: 'l-shaped', label: 'L-shaped' },
