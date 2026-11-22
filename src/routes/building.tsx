@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Canvas } from '@react-three/fiber';
 import { Environment, Lightformer, OrbitControls } from '@react-three/drei';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { OrbitControls as OrbitImpl } from 'three-stdlib';
-import { ArrowLeft, Building2, Focus } from 'lucide-react';
+import { ArrowLeft, Building2, ExternalLink, Focus, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -32,6 +32,8 @@ function BuildingPage() {
   const [multi, setMulti] = useState(true);
   const [system, setSystem] = useState<StairSystem>('spine');
   const [opacity, setOpacity] = useState(0.3);
+  const [inspiration, setInspiration] = useState<{ title: string; imageUrl: string; sourceUrl: string; attribution: string } | null>(null);
+  useEffect(() => { try { const saved = localStorage.getItem('sahaab:selected-staircase-reference'); if (saved) setInspiration(JSON.parse(saved) as { title: string; imageUrl: string; sourceUrl: string; attribution: string }); } catch { localStorage.removeItem('sahaab:selected-staircase-reference'); } }, []);
   const controls = useRef<OrbitImpl>(null);
   const go = (k: keyof typeof PRESETS) => { const c = controls.current; if (!c) return; const p = PRESETS[k]; c.object.position.set(p.pos[0], p.pos[1], p.pos[2]); c.target.set(p.target[0], p.target[1], p.target[2]); c.update(); };
   return (
@@ -56,6 +58,7 @@ function BuildingPage() {
       </div>
       <aside className="space-y-5 border-t p-4 md:w-80 md:border-l md:border-t-0">
         <h1 className="font-display text-2xl">Stair shaft</h1>
+        {inspiration && <section className="space-y-2 rounded-lg border bg-card p-3"><div className="flex items-center gap-2 text-xs font-semibold"><ImageIcon className="size-4 text-accent" /> Selected inspiration</div><img src={inspiration.imageUrl} alt={inspiration.title} className="aspect-[16/9] w-full rounded-md object-cover" /><p className="text-sm font-medium capitalize">{inspiration.title}</p><p className="text-[10px] text-muted-foreground">{inspiration.attribution}</p><a href={inspiration.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs underline">Original image source <ExternalLink className="size-3" /></a></section>}
         <div className="flex items-center justify-between gap-3">
           <div><p className="text-sm font-medium">Multi-floor building</p><p className="text-xs text-muted-foreground">3 storeys, slabs, voids, landings and core</p></div>
           <Switch checked={multi} onCheckedChange={setMulti} aria-label="Multi-floor building" />
