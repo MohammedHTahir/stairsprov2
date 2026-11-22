@@ -25,7 +25,8 @@ export function StaircaseGallery() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Inspiration | null>(null);
   const [detail, setDetail] = useState<Inspiration | null>(null);
-  const [search, setSearch] = useState('');\n  const requestId = useRef(0);
+  const [search, setSearch] = useState('');
+  const requestId = useRef(0);
   const load = useCallback(async (reset = false) => {
     const id = ++requestId.current;
     setLoading(true); setError('');
@@ -44,7 +45,8 @@ export function StaircaseGallery() {
       if (id === requestId.current) { setError(message); if (!reset) toast.error(message); }
     } finally { if (id === requestId.current) setLoading(false); }
   }, [layout, material, offset]);
-  useEffect(() => { setImages([]); setOffset(0); void load(true); // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [layout, material]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setImages([]); setOffset(0); void load(true); }, [layout, material]);
   const visible = images.filter(item => !search.trim() || item.title.toLowerCase().includes(search.toLowerCase()) || item.author.toLowerCase().includes(search.toLowerCase()));
   const choose = (item: Inspiration) => { setSelected(item); setDetail(null); toast.success('Reference selected for your staircase design.'); };
   return <main className="min-h-screen bg-background">
