@@ -16,7 +16,7 @@ type CloudflareResponse = {
   errors?: { message?: string; code?: number }[];
 };
 function sse(event: string, payload: unknown) {
-  return `event: ${event}\\ndata: ${JSON.stringify(payload)}\\n\\n`;
+  return `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
 }
 function cloudflareError(json: CloudflareResponse | null, status: number) {
   const message = json?.errors?.map(error => error.message).filter(Boolean).join("; ");
@@ -58,8 +58,8 @@ export async function editImage(token: string, form: FormData): Promise<Response
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
       const send = (value: string) => { try { controller.enqueue(encoder.encode(value)); } catch { /* client disconnected */ } };
-      send(": connected\\n\\n");
-      ping = setInterval(() => send(": ping\\n\\n"), PING_MS);
+      send(": connected\n\n");
+      ping = setInterval(() => send(": ping\n\n"), PING_MS);
       try {
         const b64 = await callCloudflare(token, accountId, form, abort.signal);
         send(sse("image_edit.completed", { type: "image_edit.completed", b64_json: b64 }));
