@@ -7,6 +7,7 @@ import { authenticateRequest } from '@/integrations/supabase/auth-middleware';
 const API = 'https://api.worldlabs.ai/marble/v1';
 const MODEL = 'marble-1.1';
 const UUID = /^[0-9a-f-]{36}$/i;
+const operations = new Map<string, string>();
 
 async function authorize(request: Request) {
   const auth = await authenticateRequest(request);
@@ -45,22 +46,23 @@ export const Route = createFileRoute('/api/world')({ server: { handlers: {
     if (!res.ok) { console.error('World Labs generate failed', res.status, (await res.text().catch(() => '')).slice(0, 300)); return Response.json({ message: upstreamError(res.status) }, { status: res.status === 402 || res.status === 429 ? res.status : 502 }); }
     const json = await res.json() as { operation_id?: string };
     if (!json.operation_id) return Response.json({ message: 'The 3D room service did not start.' }, { status: 502 });
-    return Response.json({ operationId: json.operation_id, owner: auth.userId });
+    operations.set(json.operation_id, auth.userId);
+    return Response.json({ operationId: json.operation_id });
   },
   GET: async ({ request }) => {
     const auth = await authorize(request); if (auth.error) return auth.error;
     const op = new URL(request.url).searchParams.get('op') ?? '';
-    const owner = new URL(request.url).searchParams.get('owner') ?? '';
-    if (owner !== auth.userId) return Response.json({ message: 'This operation does not belong to your account.' }, { status: 403 });
+    if (operations.get(op) !== auth.userId) return Response.json({ message: 'This operation does not belong to your account or has expired. Start a new 3D build.' }, { status: 403 });
     if (!UUID.test(op)) return Response.json({ message: 'Invalid request.' }, { status: 400 });
     const res = await fetch(`${API}/operations/${op}`, { headers: { 'WLT-Api-Key': auth.apiKey } });
     if (!res.ok) return Response.json({ message: upstreamError(res.status) }, { status: 502 });
     const data = await res.json() as Operation;
     if (!data.done) return Response.json({ done: false, progress: data.metadata?.progress?.description ?? 'Building your 3D room…' });
-    if (data.error) return Response.json({ done: true, message: 'The 3D room could not be built from this picture.' }, { status: 422 });
+    if (data.error) { operations.delete(op); return Response.json({ done: true, message: 'The 3D room could not be built from this picture.' }, { status: 422 }); }
     const splats = data.response?.assets?.splats; const urls = splats?.spz_urls ?? {};
     const splat = urls['500k'] ?? urls['full_res'] ?? urls['100k'];
-    if (!splat) return Response.json({ done: true, message: 'The 3D room finished without a model.' }, { status: 502 });
+    if (!splat) { operations.delete(op); return Response.json({ done: true, message: 'The 3D room finished without a model.' }, { status: 502 }); }
+    operations.delete(op);
     return Response.json({ done: true, splat, scale: splats?.semantics_metadata?.metric_scale_factor ?? 1, ground: splats?.semantics_metadata?.ground_plane_offset ?? 0 });
   },
 } } });
