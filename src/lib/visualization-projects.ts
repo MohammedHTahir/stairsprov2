@@ -31,17 +31,23 @@ export async function saveVisualization(name: string, room: string, reference: s
 }
 /** Attach a built 3D room to an already-saved picture. */
 export async function saveWorld(imageId: string, world: SavedWorld) {
-  const { error } = await supabase.from('visualization_images').update({ world }).eq('id', imageId);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Sign in to update this project.');
+  const { error } = await supabase.from('visualization_images').update({ world }).eq('id', imageId).eq('user_id', user.id);
   if (error) throw error;
 }
 export async function signedImage(path: string) { const { data, error } = await supabase.storage.from('visualizations').createSignedUrl(path, 3600); if (error) throw error; return data.signedUrl; }
 export async function listVisualizations() {
-  const { data, error } = await supabase.from('visualization_projects').select('*').order('updated_at', { ascending: false });
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error('Sign in to view your saved projects.');
+  const { data, error } = await supabase.from('visualization_projects').select('*').eq('user_id', user.id).order('updated_at', { ascending: false });
   if (error) throw error;
   return Promise.all(data.map(async p => ({ ...p, thumbnail: await signedImage(p.room_path) })));
 }
 export async function openVisualization(id: string) {
-  const { data: project, error } = await supabase.from('visualization_projects').select('*').eq('id', id).single(); if (error) throw error;
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error('Sign in to open this project.');
+  const { data: project, error } = await supabase.from('visualization_projects').select('*').eq('id', id).eq('user_id', user.id).single(); if (error) throw error;
   const { data: images, error: imageError } = await supabase.from('visualization_images').select('*').eq('project_id', id).order('created_at'); if (imageError) throw imageError;
   const [room, reference, history] = await Promise.all([signedImage(project.room_path), signedImage(project.reference_path), Promise.all(images.map(async i => ({ id: i.id, src: await signedImage(i.image_path), instruction: i.instruction, saved: true, world: parseWorld(i.world) })))]);
   return { project, room, reference, history };

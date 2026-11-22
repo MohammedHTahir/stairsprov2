@@ -33,94 +33,23 @@ export type Database = {
         Relationships: []
       }
       profiles: {
-        Row: {
-          company: string
-          display_name: string
-          id: string
-        }
-        Insert: {
-          company?: string
-          display_name?: string
-          id: string
-        }
-        Update: {
-          company?: string
-          display_name?: string
-          id?: string
-        }
-        Relationships: []
+        Row: { company: string; display_name: string; id: string; created_at: string; updated_at: string };
+        Insert: { company?: string; display_name?: string; id: string; created_at?: string; updated_at?: string };
+        Update: { company?: string; display_name?: string; id?: string; created_at?: string; updated_at?: string };
+        Relationships: [];
       }
       visualization_images: {
-        Row: {
-          created_at: string
-          id: string
-          image_path: string
-          instruction: string
-          project_id: string
-          user_id: string
-          world: Json | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          image_path: string
-          instruction?: string
-          project_id: string
-          user_id?: string
-          world?: Json | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          image_path?: string
-          instruction?: string
-          project_id?: string
-          user_id?: string
-          world?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "visualization_images_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "visualization_projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+        Row: { created_at: string; id: string; image_path: string; instruction: string; project_id: string; user_id: string; world: Json | null };
+        Insert: { created_at?: string; id?: string; image_path: string; instruction?: string; project_id: string; user_id: string; world?: Json | null };
+        Update: { created_at?: string; id?: string; image_path?: string; instruction?: string; project_id?: string; user_id?: string; world?: Json | null };
+        Relationships: [{ foreignKeyName: "visualization_images_project_id_fkey"; columns: ["project_id"]; isOneToOne: false; referencedRelation: "visualization_projects"; referencedColumns: ["id"] }];
+      };
       visualization_projects: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          reference_path: string
-          room_path: string
-          settings: Json
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name?: string
-          reference_path: string
-          room_path: string
-          settings?: Json
-          updated_at?: string
-          user_id?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          reference_path?: string
-          room_path?: string
-          settings?: Json
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
+        Row: { created_at: string; id: string; name: string; reference_path: string; room_path: string; settings: Json; updated_at: string; user_id: string };
+        Insert: { created_at?: string; id?: string; name?: string; reference_path: string; room_path: string; settings?: Json; updated_at?: string; user_id: string };
+        Update: { created_at?: string; id?: string; name?: string; reference_path?: string; room_path?: string; settings?: Json; updated_at?: string; user_id?: string };
+        Relationships: [];
+      };
     }
     Views: {
       [_ in never]: never

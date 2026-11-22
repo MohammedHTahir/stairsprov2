@@ -11,12 +11,25 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PhotoComparison } from './PhotoComparison';
 import { supabase } from '@/integrations/supabase/client';
+import { AuthDialog } from '@/components/AuthDialog';
 import { exampleRoom, exampleResult, products } from '@/lib/visualization-library';
 import { defaultSettings, visualizationSchema, treadColors, metalColors, wallStyles, floorStyles, lightingStyles, type VisualizationSettings } from '@/lib/visualization';
 import { imageBlob, saveWorld, saveVisualization, listVisualizations, openVisualization } from '@/lib/visualization-projects';
 import { streamImage } from '@/lib/stream-image';
 import type { User } from '@supabase/supabase-js';
 type History = { src: string; instruction: string; saved: boolean; id?: string };
+async function modelInputBlob(src: string) {
+  const bitmap = await createImageBitmap(await imageBlob(src));
+  const scale = Math.min(1, 510 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext('2d');
+  if (!context) { bitmap.close(); throw new Error('Could not prepare the reference image.'); }
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not prepare the reference image.')), 'image/jpeg', 0.88));
+}
 async function normalizePhoto(file: File) {
   if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 20 * 1024 * 1024) throw new Error('Use a JPG, PNG or WebP photo up to 20 MB.');
   const bitmap = await createImageBitmap(file); const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
@@ -32,6 +45,7 @@ export function VisualizationWorkspace() {
   const [mode, setMode] = useState<'none'|'start'|'landing'|'region'>('none'); const [drawing, setDrawing] = useState(false);
   const [tab, setTab] = useState<'design'|'placement'>('design'); const [view, setView] = useState<'compare'|'original'|'result'>('compare');
   const [name, setName] = useState('Stone wall residence'); const [projectId, setProjectId] = useState<string>(); const [savedOpen, setSavedOpen] = useState(false); const [saved, setSaved] = useState<Awaited<ReturnType<typeof listVisualizations>>>([]); const [saving, setSaving] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false); const [displayName, setDisplayName] = useState(''); const [company, setCompany] = useState('');
   const [viewer3d, setViewer3d] = useState(false); const [worlds, setWorlds] = useState<Record<string, WorldState>>({}); const [resetKey, setResetKey] = useState(0);
   const roomInput = useRef<HTMLInputElement>(null); const cameraInput = useRef<HTMLInputElement>(null); const referenceInput = useRef<HTMLInputElement>(null);
@@ -48,29 +62,37 @@ export function VisualizationWorkspace() {
   }
   async function generate(refine = false) {
     if (busy || !room || !reference) return;
+    if (!user) { toast.error('Sign in to generate private visualizations.'); return; }
     setBusy(true); setError(''); setPreview(''); setPartial(true);
     try {
-            const form = new FormData(); form.append('reference', await imageBlob(reference), 'reference.png');
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      if (!token) throw new Error('Your session expired. Please sign in again.');
+      const form = new FormData(); form.append('room', await imageBlob(room), 'room.png'); form.append('reference', await imageBlob(reference), 'reference.png');
       if (refine && result) form.append('previous', await imageBlob(result), 'previous.png');
+      if (room) form.append('modelRoom', await modelInputBlob(room), 'room.jpg');
+      if (reference) form.append('modelReference', await modelInputBlob(reference), 'reference.jpg');
+      if (refine && result) form.append('modelPrevious', await modelInputBlob(result), 'previous.jpg');
       form.append('settings', JSON.stringify({ ...settings, refinement: refine ? settings.refinement : '', referenceKind: productId === 'spiral' ? 'spiral' : productId === 'support-b' ? 'side' : products.find(p => p.id === productId)?.type === 'Support component' ? 'support' : 'complete' }));
-      let final = ''; await streamImage('/api/visualize', form, (src, isFinal) => { setPreview(src); setPartial(!isFinal); if (isFinal) final = src; });
+      let final = ''; await streamImage('/api/visualize', form, (src, isFinal) => { setPreview(src); setPartial(!isFinal); if (isFinal) final = src; }, undefined, { Authorization: `Bearer ${token}` });
       if (!final) throw new Error('The visualization did not finish.');
       const item = { src: final, instruction: refine ? settings.refinement : 'Initial visualization', saved: false }; setHistory(h => [...h, item]); setActive(history.length); setPreview(''); setView('result'); update({ refinement: '' });
     } catch(e) { setPreview(''); setError(e instanceof Error ? e.message : 'Image generation failed.'); } finally { setBusy(false); setPartial(false); }
   }
   async function save() {
-    if (!user) return; setSaving(true);
+    if (!user) { setAuthOpen(true); return; } setSaving(true);
     try { const id = await saveVisualization(name.trim() || 'Untitled room', room, reference, settings, history.filter(h => !h.saved).map(h => { const w = worlds[h.src]; return { ...h, world: w?.status === 'ready' ? w.world : undefined }; }), projectId); setProjectId(id.projectId); const unsaved = history.filter(h => !h.saved); setHistory(h => h.map(i => i.saved ? i : { ...i, saved: true, ...(id.ids[unsaved.indexOf(i)] ? { id: id.ids[unsaved.indexOf(i)]! } : {}) })); toast.success('Project saved privately.'); } catch(e) { toast.error(e instanceof Error ? e.message : 'Could not save.'); } finally { setSaving(false); }
   }
   async function openSaved() { if (!user) return; setSavedOpen(true); try { setSaved(await listVisualizations()); } catch(e) { toast.error(e instanceof Error ? e.message : 'Could not load projects.'); } }
   async function openProject(id: string) { try { const data = await openVisualization(id); setProjectId(id); setName(data.project.name); setRoom(data.room); setReference(data.reference); setProductId('custom'); setSettings(visualizationSchema.parse(data.project.settings)); setHistory(data.history.map(({ world: _w, ...h }) => h)); setWorlds(Object.fromEntries(data.history.filter(h => h.world).map(h => [h.src, { status: 'ready' as const, world: h.world! }]))); setActive(data.history.length-1); setSavedOpen(false); } catch(e) { toast.error(e instanceof Error ? e.message : 'Could not open project.'); } }
   async function download() { if (!result) return; const url = URL.createObjectURL(await imageBlob(result)); const a = document.createElement('a'); a.href = url; a.download = `${name || 'stair-visualization'}.png`; a.click(); URL.revokeObjectURL(url); }
   async function build3d() {
+    if (!user) { setAuthOpen(true); return; }
     const src = result; if (!src || worlds[src]?.status === 'building') return;
     const set = (state: WorldState) => setWorlds(w => ({ ...w, [src]: state }));
     set({ status: 'building', progress: 'Sending your picture…' });
     try {
-      const auth = async () => ({});
+      const auth = async () => { const { data } = await supabase.auth.getSession(); const token = data.session?.access_token; if (!token) throw new Error('Sign in to build 3D rooms.'); return { Authorization: `Bearer ${token}` }; };
       const bitmap = await createImageBitmap(await imageBlob(src)); const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
       const canvas = document.createElement('canvas'); canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale); canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
       const jpeg = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/jpeg', 0.92)); if (!jpeg) throw new Error('Could not prepare the picture.');
@@ -92,13 +114,13 @@ export function VisualizationWorkspace() {
   return <main className="min-h-screen bg-background">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-4 md:px-8">
       <Link to="/" className="font-display text-2xl">StairStudio <span className="text-accent">AI</span></Link>
-      <div className="flex items-center gap-1"><Button variant="ghost" size="sm" asChild><Link to="/building"><Box /> Building</Link></Button><Button variant="ghost" size="icon" title="New visualization" aria-label="New visualization" disabled={busy} onClick={reset}><Plus /></Button></div>
+      <div className="flex items-center gap-1">{user ? <><Button variant="ghost" size="sm" onClick={() => void openProfile()}><UserRound /> Account</Button><Button variant="ghost" size="sm" onClick={async () => { await supabase.auth.signOut(); setUser(null); toast.success('Signed out.'); }}><LogOut /> Sign out</Button></> : <Button size="sm" onClick={() => setAuthOpen(true)}>Sign in</Button>}<Button variant="ghost" size="sm" asChild><Link to="/building"><Box /> Building</Link></Button><Button variant="ghost" size="icon" title="New visualization" aria-label="New visualization" disabled={busy} onClick={reset}><Plus /></Button></div>
     </header>
     <div className="mx-auto max-w-[1600px] px-4 py-6 md:px-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="mb-1 text-xs uppercase tracking-widest text-muted-foreground">Photo visualization studio</p><h1 className="font-display text-4xl md:text-5xl">Your staircase. A real home.</h1></div><div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="size-1.5 rounded-full bg-accent" /> Architecture-first visualization</div></div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><Input aria-label="Project name" value={name} onChange={e => setName(e.target.value)} className="h-8 max-w-[230px] border-none bg-transparent px-0 font-medium shadow-none" /><div className="flex gap-1"><Button size="icon" variant="ghost" aria-label="Download result" title="Download result" disabled={!result || busy} onClick={download}><Download /></Button><Button size="sm" variant="outline" aria-label="View in 3D" disabled={!result || busy} onClick={() => setViewer3d(true)}><Box /> 3D</Button></div></div>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><Input aria-label="Project name" value={name} onChange={e => setName(e.target.value)} className="h-8 max-w-[230px] border-none bg-transparent px-0 font-medium shadow-none" /><div className="flex gap-1"><Button size="icon" variant="ghost" aria-label="Download result" title="Download result" disabled={!result || busy} onClick={download}><Download /></Button><Button size="sm" variant="outline" aria-label="View in 3D" disabled={!result || busy} onClick={() => user ? setViewer3d(true) : setAuthOpen(true)}><Box /> 3D</Button></div></div>
           <div className="overflow-hidden rounded-lg border bg-card">
             <div className="relative"><img src={preview || result || exampleResult} alt="Staircase visualization" className={`block w-full ${partial && preview ? 'blur-sm' : ''}`} /><span className="absolute left-3 top-3 rounded bg-background/90 px-2 py-1 text-xs">{preview || result ? 'Visualization' : 'Example'}</span></div>
           </div>
@@ -122,6 +144,7 @@ export function VisualizationWorkspace() {
       </div>
     </div>
     <input ref={roomInput} aria-label="Upload room photo" type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={e => upload(e.target.files?.[0],true)} /><input ref={cameraInput} aria-label="Capture room photo" type="file" capture="environment" accept="image/*" hidden onChange={e => upload(e.target.files?.[0],true)} /><input ref={referenceInput} aria-label="Upload reference photo" type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={e => upload(e.target.files?.[0],false)} />
+    <AuthDialog open={authOpen} onOpenChange={setAuthOpen} onAuthenticated={nextUser => { setUser(nextUser); void router.invalidate(); }} />
     <Dialog open={savedOpen} onOpenChange={setSavedOpen}><DialogContent className="max-h-[85dvh] overflow-y-auto"><DialogHeader><DialogTitle>Saved visualizations</DialogTitle></DialogHeader>{saved.length ? <div className="grid grid-cols-2 gap-3">{saved.map(p => <Button key={p.id} variant="outline" className="h-auto flex-col overflow-hidden p-0" onClick={() => openProject(p.id)}><img src={p.thumbnail} alt={p.name} className="aspect-[4/3] w-full object-cover" /><span className="w-full truncate p-2 text-left">{p.name}</span></Button>)}</div> : <p className="text-sm text-muted-foreground">No saved visualizations yet.</p>}</DialogContent></Dialog>
     <Dialog open={viewer3d} onOpenChange={setViewer3d}><DialogContent className="max-w-4xl p-3"><DialogHeader><DialogTitle>Walk through in 3D</DialogTitle></DialogHeader><div className="relative h-[60dvh] overflow-hidden rounded-md border bg-card">{(() => { const w = worlds[result]; if (w?.status === 'ready') return <ClientOnly fallback={null}><Suspense fallback={<div className="flex h-full items-center justify-center"><Loader2 className="animate-spin" /></div>}><WorldViewer world={w.world} resetKey={resetKey} /></Suspense></ClientOnly>; if (w?.status === 'building') return <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground"><Loader2 className="animate-spin" /><p>{w.progress}</p><p className="text-xs">This usually takes about 5 minutes. You can close this window and keep working.</p></div>; return <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">{result && <img src={result} alt="" className="max-h-[30dvh] rounded-md object-contain" />}<p className="max-w-md text-sm text-muted-foreground">Turn this picture into a full 3D room you can walk around. It takes about 5 minutes and uses one 3D credit.</p>{w?.status === 'error' && <p className="max-w-md text-sm text-destructive">{w.message}</p>}<Button onClick={build3d} disabled={!result}><Box /> {w?.status === 'error' ? 'Try again' : 'Build 3D room'}</Button></div>; })()}</div><div className="flex items-center justify-between gap-2"><p className="text-xs text-muted-foreground">Drag to look · two fingers or W A S D to move · hold the arrows to walk. Areas the photo never showed are filled in by AI.</p><Button size="sm" variant="ghost" onClick={() => setResetKey(k => k + 1)}><RotateCcw /> Reset</Button></div></DialogContent></Dialog>
     <Dialog open={profileOpen} onOpenChange={setProfileOpen}><DialogContent><DialogHeader><DialogTitle>Account profile</DialogTitle></DialogHeader><form className="space-y-3" onSubmit={async e => { e.preventDefault(); if (!user) return; const { error } = await supabase.from('profiles').upsert({ id: user.id, display_name: displayName, company }); if (error) toast.error(error.message); else { toast.success('Profile saved.'); setProfileOpen(false); } }}><Input aria-label="Display name" placeholder="Name" maxLength={100} value={displayName} onChange={e => setDisplayName(e.target.value)} /><Input aria-label="Company" placeholder="Company" maxLength={200} value={company} onChange={e => setCompany(e.target.value)} /><Button type="submit" className="w-full">Save profile</Button></form></DialogContent></Dialog>

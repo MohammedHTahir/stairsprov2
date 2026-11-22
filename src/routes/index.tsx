@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { VisualizationWorkspace } from '@/components/VisualizationWorkspace';
+import { StaircaseGallery } from '@/components/StaircaseGallery';
 export const Route = createFileRoute('/')({ head: () => ({ meta: [
-  { title: 'StairStudio AI — Room & staircase visualization' },
-  { name: 'description', content: 'Visualize your chosen staircase in a room photo, with architectural preservation, placement guidance and photorealistic results.' },
-  { property: 'og:title', content: 'StairStudio AI — Room & staircase visualization' },
-  { property: 'og:description', content: 'Your room photo. Your staircase reference. A photorealistic design visualization.' },
+  { title: 'Sahaab Stair Studio — Staircase Inspiration Gallery' },
+  { name: 'description', content: 'Explore real staircase photography by layout, material and finish. Choose a reference for your staircase design.' },
+  { property: 'og:title', content: 'Sahaab Stair Studio — Staircase Inspiration Gallery' },
+  { property: 'og:description', content: 'Browse staircase ideas and select a real-world design reference.' },
   { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary_large_image' },
-] }), component: VisualizationWorkspace });
+] }), component: StaircaseGallery });
