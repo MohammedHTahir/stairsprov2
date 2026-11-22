@@ -49,7 +49,7 @@ export function StaircaseGallery() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setImages([]); setOffset(0); void load(true); }, [layout, material]);
   const visible = images.filter(item => !search.trim() || item.title.toLowerCase().includes(search.toLowerCase()) || item.author.toLowerCase().includes(search.toLowerCase()));
-  const choose = (item: Inspiration) => { setSelected(item); setDetail(null); try { localStorage.setItem('sahaab:selected-staircase-reference', JSON.stringify(item)); } catch { toast.error('Could not save this reference in this browser.'); return; } toast.success('Reference saved for your next design session.'); };
+  const choose = (item: Inspiration) => { setSelected(item); setDetail(null); try { localStorage.setItem('sahaab:selected-staircase-reference', JSON.stringify(item)); } catch { toast.error('Could not save this reference in this browser.'); return; } toast.success('Reference saved in this browser.'); };
   return <main className="min-h-screen bg-background">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-4 md:px-8">
       <Link to="/" className="font-display text-2xl">Sahaab <span className="text-accent">Stair Studio</span></Link>
@@ -63,7 +63,7 @@ export function StaircaseGallery() {
       {selected && <div className="mb-6 flex flex-col gap-4 rounded-xl border bg-card p-3 sm:flex-row sm:items-center">
         <img src={selected.imageUrl} alt={selected.title} className="h-28 w-full rounded-lg object-cover sm:w-44" />
         <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-wider text-accent">Selected inspiration</p><h2 className="mt-1 truncate font-medium capitalize">{selected.title}</h2><p className="mt-1 truncate text-xs text-muted-foreground">{selected.attribution}</p><a href={selected.sourceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs underline underline-offset-4">View original source <ExternalLink className="size-3" /></a></div>
-        <div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => { setSelected(null); localStorage.removeItem('sahaab:selected-staircase-reference'); }}>Clear</Button><Button size="sm" onClick={() => toast.success('This reference is saved in your Sahaab design workspace.')}>Reference saved <Check /></Button></div>
+        <div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => { setSelected(null); localStorage.removeItem('sahaab:selected-staircase-reference'); }}>Clear</Button><Button size="sm" asChild><Link to="/building">Open design workspace <ArrowUpRight /></Link></Button></div>
       </div>}
       <div className="mb-5 flex flex-col gap-4 rounded-xl border bg-card p-4">
         <div className="flex flex-wrap items-center gap-2"><SlidersHorizontal className="mr-1 size-4 text-muted-foreground" />{layouts.map(item => <Button key={item.id} size="sm" variant={layout === item.id ? 'default' : 'outline'} className="rounded-full" onClick={() => setLayout(item.id)}>{item.label}</Button>)}</div>
