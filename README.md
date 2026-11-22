@@ -1,27 +1,24 @@
 # Sahaab Stair Studio
 
-A curated staircase inspiration gallery built with TanStack Start, React and TypeScript.
+A staircase photo-visualization studio built with TanStack Start, React and TypeScript.
 
-## Staircase gallery
+## Product workflow
 
-The home page opens directly into a browsable image library. Images are sourced from Wikimedia Commons and grouped by staircase configuration:
+- Upload or capture a photo of the customer's room.
+- Choose the staircase layout, timber tone, metal finish, wall, floor and lighting.
+- When Generate is pressed, the server searches for a close staircase reference matching the chosen layout and the supported material aesthetic.
+- The selected reference is used internally as an input to image editing. Customers do not browse or see an inspiration gallery.
+- Generated visualizations can be refined, downloaded and saved to a private customer project.
 
-- Straight
-- L-shaped
-- U-shaped
-- Spiral
-- Floating
-- Cantilevered
+## Supported staircase aesthetic
 
-The gallery also filters by material: wood/timber, glass, steel/metal and stone/marble. Each category requests a larger batch of relevant photographs and supports progressive loading, keyword search, image details, source attribution and license information.
+Sahaab focuses on premium contemporary timber-and-steel staircases: thick open timber treads, dark structural steel supports or central spine, and clear frameless glass balustrades. Unrelated staircase families and materials are intentionally excluded from automatic reference searches.
 
-Selecting a photograph saves it as the current design reference in the browser. No image generation, AI model, AI Gateway, Cloudflare account, API token or paid image service is used by the gallery.
-
-Images remain hosted by Wikimedia Commons. Their licenses vary, so users should open the original file page and review its license before reusing an image outside the gallery.
+Reference photographs are sourced from Wikimedia Commons. Attribution and license details are retained by the server; check the original file page before reusing an image outside the product.
 
 ## Development
 
-Requires Node.js and npm.
+Requires Node.js.
 
 ```sh
 git clone https://github.com/MohammedHTahir/stairsprov2.git
@@ -32,4 +29,8 @@ npm run dev
 
 ## Environment variables
 
-The public inspiration gallery does not require any provider API keys. Wikimedia Commons is queried through the server route `/api/inspiration`; responses are cached at the edge.
+- Supabase URL and publishable key for authentication and private project storage.
+- AI_GATEWAY_API_KEY for image editing through the configured image provider.
+- WORLDLABS_API_KEY only if the optional 3D room workflow is enabled.
+
+No public inspiration gallery is displayed in the customer workflow.
