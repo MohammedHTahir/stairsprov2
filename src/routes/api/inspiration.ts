@@ -73,38 +73,57 @@ export const Route = createFileRoute('/api/inspiration')({
         const wood = url.searchParams.get('wood') ?? 'natural-oak';
         const metal = url.searchParams.get('metal') ?? 'matte-black';
         const support = url.searchParams.get('support') ?? 'central-spine';
-        const params = new URLSearchParams({
-          action: 'query', generator: 'search', gsrsearch: 'staircase',
-          gsrnamespace: '6', gsrlimit: '50',
-          prop: 'imageinfo', iiprop: 'url|extmetadata',
-          iiextmetadatafilter: 'Artist|LicenseShortName|ImageDescription',
-          iiurlwidth: '1600', format: 'json', formatversion: '2',
-        });
-
+        const layoutQuery: Record<string, string> = {
+          straight: '"straight staircase" OR "floating staircase"',
+          'l-shaped': '"L shaped staircase" OR "quarter turn staircase"',
+          'u-shaped': '"U shaped staircase" OR "switchback staircase"',
+          cantilevered: '"cantilevered staircase" OR "floating staircase"',
+        };
+        const woodQuery: Record<string, string> = {
+          'light-oak': 'oak timber wood',
+          'natural-oak': 'oak timber wood',
+          walnut: 'walnut dark wood timber',
+          'dark-walnut': 'walnut dark wood timber',
+        };
+        const queries = [
+          `${layoutQuery[layout] ?? layoutQuery.straight} ${woodQuery[wood] ?? woodQuery['natural-oak']} glass steel`,
+          `floating staircase ${woodQuery[wood] ?? woodQuery['natural-oak']} glass`,
+          'modern timber staircase glass balustrade steel',
+        ];
         try {
-          const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`, {
-            headers: { 'User-Agent': 'SahaabStairStudio/1.0 (reference matching)' },
-            signal: AbortSignal.timeout(12000),
-          });
-          if (!response.ok) return Response.json({ message: 'The staircase reference collection is temporarily unavailable.' }, { status: 502 });
-          const data = await response.json() as { query?: { pages?: CommonsPage[] } };
-          const candidates: Candidate[] = (data.query?.pages ?? []).flatMap(page => {
+          const batches = await Promise.all(queries.map(async query => {
+            const params = new URLSearchParams({
+              action: 'query', generator: 'search', gsrsearch: query,
+              gsrnamespace: '6', gsrlimit: '35',
+              prop: 'imageinfo', iiprop: 'url|extmetadata',
+              iiextmetadatafilter: 'Artist|LicenseShortName|ImageDescription',
+              iiurlwidth: '1600', format: 'json', formatversion: '2',
+            });
+            const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`, {
+              headers: { 'User-Agent': 'SahaabStairStudio/1.0 (reference matching)' },
+              signal: AbortSignal.timeout(12000),
+            });
+            if (!response.ok) throw new Error('The staircase reference collection is temporarily unavailable.');
+            const data = await response.json() as { query?: { pages?: CommonsPage[] } };
+            return data.query?.pages ?? [];
+          }));
+          const unique = new Map<string, Candidate>();
+          for (const page of batches.flat()) {
             const info = page.imageinfo?.[0];
-            if (!page.title || !info?.thumburl || !info.descriptionurl) return [];
+            if (!page.title || !info?.thumburl || !info.descriptionurl || unique.has(page.title)) continue;
             const metadata = info.extmetadata ?? {};
             const description = clean(metadata.ImageDescription?.value);
-            const title = page.title.replace(/^File:/, '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+            const title = page.title.replace(/^File:/, '').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ');
             const score = scoreCandidate(`${title} ${description}`, layout, wood, metal, support);
-            if (score < 10) return [];
+            if (score < 10) continue;
             const author = clean(metadata.Artist?.value) || 'Wikimedia Commons contributor';
             const license = clean(metadata.LicenseShortName?.value) || 'See original source';
-            return [{
-              title, imageUrl: info.thumburl!, sourceUrl: info.descriptionurl!,
+            unique.set(page.title, {
+              title, imageUrl: info.thumburl, sourceUrl: info.descriptionurl,
               attribution: `Photo by ${author}`, license, score,
-            }];
-          }).sort((a, b) => b.score - a.score);
-
-          const match = candidates[0];
+            });
+          }
+          const match = [...unique.values()].sort((a, b) => b.score - a.score)[0];
           if (!match) return Response.json({ message: 'No close match was found in the current reference collection. Try a different configuration.' }, { status: 404 });
           return Response.json({ match }, {
             headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
