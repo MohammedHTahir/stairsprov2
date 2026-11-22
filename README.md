@@ -38,3 +38,15 @@ npm run dev
 3. Deploy.
 
 The image model is set in `src/lib/image-gateway.server.ts`. AI Gateway does not stream partial image edits, so that file emits a single SSE `completed` event to the browser.
+
+
+## Free AI image generation (Cloudflare Workers AI)
+
+Image generation uses Black Forest Labs FLUX.2 [klein] 4B through Cloudflare Workers AI. This replaces the paid Vercel AI Gateway image model. The model accepts up to four reference images for image editing; the browser prepares reference copies below 512x512 while retaining original-resolution images in the workspace and Supabase project storage.
+
+Configure these server-side environment variables in Vercel and local development:
+
+- `CLOUDFLARE_ACCOUNT_ID`: your Cloudflare account ID.
+- `CLOUDFLARE_API_TOKEN`: an API token with Workers AI Run permission. Never expose it as a `VITE_*` variable.
+
+Cloudflare Workers AI currently includes 10,000 free neurons per day, resetting at 00:00 UTC. Once the free allowance is exhausted, generation requests are rejected until reset; no paid overage is enabled on the Workers Free plan. See [Cloudflare Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/) and [FLUX.2 Klein 4B documentation](https://developers.cloudflare.com/workers-ai/models/flux-2-klein-4b/).
