@@ -1,16 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
+import { authenticateRequest } from '@/integrations/supabase/auth-middleware';
 
 // Turns a finished picture into a walkable 3D world (Gaussian splats) with World Labs Marble.
 const API = 'https://api.worldlabs.ai/marble/v1';
 const MODEL = 'marble-1.1';
 const UUID = /^[0-9a-f-]{36}$/i;
 
-async function authorize(_request: Request) {
+async function authorize(request: Request) {
+  const auth = await authenticateRequest(request);
+  if ('response' in auth) return { error: auth.response } as const;
   const apiKey = process.env['WORLDLABS_API_KEY'];
   if (!apiKey) return { error: Response.json({ message: '3D rooms are not configured.' }, { status: 500 }) };
-  return { apiKey };
+  return { apiKey, userId: auth.user.id };
 }
 
 function toBase64(buffer: ArrayBuffer) {
