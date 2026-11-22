@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { authenticateRequest } from '@/integrations/supabase/auth-middleware';
 import { visualizationSchema, buildVisualizationPrompt, buildHousePrompt } from '@/lib/visualization';
 export const Route = createFileRoute('/api/visualize')({ server: { handlers: { POST: async ({ request }) => {
+  const auth = await authenticateRequest(request);
+  if ('response' in auth) return auth.response;
   const { getGatewayKey } = await import('@/lib/image-gateway.server'); const apiKey = getGatewayKey(request);
   if (!apiKey) return Response.json({ message: 'Image generation is not configured.' }, { status: 500 });
   try {
