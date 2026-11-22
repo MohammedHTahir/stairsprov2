@@ -32,10 +32,10 @@ export const Route = createFileRoute('/api/inspiration')({
     const layout = url.searchParams.get('layout') ?? 'all';
     const material = url.searchParams.get('material') ?? 'all';
     const offset = Math.max(0, Math.min(500, Number(url.searchParams.get('offset') ?? 0) || 0));
-    const query = [layouts[layout] ?? layouts.all, materials[material] ?? '', 'interior architecture'].filter(Boolean).join(' ');
+    const query = [layouts[layout] ?? layouts.all, materials[material] ?? ''].filter(Boolean).join(' ');
     const params = new URLSearchParams({
       action: 'query', generator: 'search', gsrsearch: query, gsrnamespace: '6',
-      gsrlimit: '30', gsoffset: String(offset), prop: 'imageinfo',
+      gsrlimit: '30', gsroffset: String(offset), prop: 'imageinfo',
       iiprop: 'url|extmetadata', iiurlwidth: '1000', format: 'json', formatversion: '2',
     });
     try {
@@ -44,7 +44,7 @@ export const Route = createFileRoute('/api/inspiration')({
         signal: AbortSignal.timeout(12000),
       });
       if (!response.ok) return Response.json({ message: 'The image library is temporarily unavailable.' }, { status: 502 });
-      const data = await response.json() as { query?: { pages?: CommonsPage[] }; continue?: { gsoffset?: number } };
+      const data = await response.json() as { query?: { pages?: CommonsPage[] }; continue?: { gsroffset?: number } };
       const images = (data.query?.pages ?? []).flatMap(page => {
         const info = page.imageinfo?.[0];
         if (!info?.thumburl || !info.descriptionurl) return [];
@@ -61,7 +61,7 @@ export const Route = createFileRoute('/api/inspiration')({
           attribution: `Photo by ${author} · ${license}`,
         }];
       });
-      return Response.json({ images, nextOffset: data.continue?.gsoffset ?? null, query }, {
+      return Response.json({ images, nextOffset: data.continue?.gsroffset ?? null, query }, {
         headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=86400' },
       });
     } catch {
