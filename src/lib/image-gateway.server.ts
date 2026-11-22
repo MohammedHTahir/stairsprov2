@@ -3,7 +3,7 @@
 const MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
 const PING_MS = 10_000;
 
-export function getGatewayKey(): string | undefined {
+export function getCloudflareApiToken(): string | undefined {
   return process.env["CLOUDFLARE_API_TOKEN"] || undefined;
 }
 export function getCloudflareAccountId(): string | undefined {
