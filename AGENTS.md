@@ -17,4 +17,7 @@
 - Only the root subscribes to identity transitions for auth cache invalidation; the password recovery page separately listens for recovery events to authorize its form.
 - Walk-through 3D rooms come from World Labs Marble via the authenticated /api/world route (key stays server-side, client polls the operation) and render as Gaussian splats with Spark; single-photo depth/mesh tricks were rejected because they smear edges.
 - Built 3D rooms are saved as a nullable world JSON on visualization_images (splat URL, scale, ground) so walkthroughs reopen without re-spending credits; the multi-floor stair shaft is a standalone client-only /building route driven by pure layout math in src/lib/building.ts.
-- The app has no sign-in: /api/visualize and /api/world are open to anyone (keys stay server-side), and cloud saving/profiles are hidden because they need accounts.
+- Supabase email/password authentication is available in the workspace. Image generation, blending, and 3D generation endpoints verify a real Supabase user before spending provider credits.
+- Server-side API routes authenticate bearer tokens with Supabase Auth getUser; never trust user IDs supplied in request bodies.
+- Visualization storage uses private `visualizations` bucket and per-user object paths; database tables and storage objects have owner-scoped RLS.
+- AI Gateway and World Labs API keys remain server-side only.
