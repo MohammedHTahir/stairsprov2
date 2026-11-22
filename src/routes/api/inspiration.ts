@@ -20,13 +20,13 @@ function plain(value?: string) {
 }
 
 const layouts: Record<string, { label: string; search: string }> = {
-  all: { label: 'All staircases', search: 'staircase OR stairs OR stairwell' },
-  straight: { label: 'Straight', search: '"straight staircase" OR "straight flight stairs" OR "straight stair"' },
-  'l-shaped': { label: 'L-shaped', search: '"L-shaped staircase" OR "quarter-turn staircase" OR "90 degree staircase"' },
-  'u-shaped': { label: 'U-shaped', search: '"U-shaped staircase" OR "switchback staircase" OR "half-turn staircase"' },
-  spiral: { label: 'Spiral', search: '"spiral staircase" OR "spiral stairs" OR "helical staircase"' },
-  floating: { label: 'Floating', search: '"floating staircase" OR "floating stairs" OR "cantilever stairs"' },
-  cantilevered: { label: 'Cantilevered', search: '"cantilever staircase" OR "cantilevered stairs" OR "wall mounted stairs"' },
+  all: { label: 'Contemporary timber / steel / glass', search: '"floating staircase" OR "cantilevered staircase" OR "modern timber staircase"' },
+  straight: { label: 'Straight', search: '"straight floating staircase" OR "straight timber staircase" OR "straight glass balustrade stairs"' },
+  'l-shaped': { label: 'L-shaped', search: '"L shaped floating staircase" OR "quarter turn timber staircase" OR "L shaped glass staircase"' },
+  'u-shaped': { label: 'U-shaped', search: '"U shaped floating staircase" OR "switchback timber staircase" OR "U shaped glass staircase"' },
+  spiral: { label: 'Spiral', search: '"floating staircase" OR "cantilevered timber staircase"' },
+  floating: { label: 'Floating', search: '"floating timber staircase" OR "floating oak stairs" OR "glass balustrade floating stairs"' },
+  cantilevered: { label: 'Cantilevered', search: '"cantilevered timber staircase" OR "wall mounted oak stairs" OR "glass cantilever staircase"' },
 };
 
 const materials: Record<string, string> = {
@@ -46,7 +46,7 @@ export const Route = createFileRoute('/api/inspiration')({
         const material = url.searchParams.get('material') ?? 'all';
         const layout = layouts[layoutId] ?? layouts.all;
         const offset = Math.max(0, Math.min(500, Number(url.searchParams.get('offset') ?? 0) || 0));
-        const query = [layout.search, materials[material] ?? ''].filter(Boolean).join(' ');
+        const query = [layout.search, 'wood OR timber OR oak', 'glass OR balustrade', 'steel OR metal'].join(' ');
         const params = new URLSearchParams({
           action: 'query',
           generator: 'search',
@@ -95,6 +95,11 @@ export const Route = createFileRoute('/api/inspiration')({
               category: layout.label,
               attribution: `Photo by ${author} · ${license}`,
             }];
+          });
+
+          images.sort((a, b) => {
+            const rank = (title: string) => { const t = title.toLowerCase(); return ['floating','cantilever','wood','timber','oak','glass','balustrade','steel'].reduce((n, word) => n + (t.includes(word) ? 1 : 0), 0); };
+            return rank(b.title) - rank(a.title);
           });
 
           return Response.json({
