@@ -1,126 +1,80 @@
-// Image editing through Vercel AI Gateway (OpenAI-compatible /v1/images/edits).
-// Docs: https://vercel.com/docs/ai-gateway/modalities/image-generation/openai
-const GATEWAY_URL = "https://ai-gateway.vercel.sh/v1/images/edits";
-const MODEL = "openai/gpt-image-2.5-sunburst";
+// Cloudflare Workers AI image editing via FLUX.2 [klein] 4B.
+// Model supports up to four reference images; each input image must be below 512x512.
+const MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
 const PING_MS = 10_000;
 
-// Prefers an explicit API key; otherwise uses the OIDC token Vercel attaches to each
-// function request (or the env token in local `vercel env pull` setups).
-export function getGatewayKey(request?: Request): string | undefined {
-  return (
-    process.env["AI_GATEWAY_API_KEY"] ||
-    request?.headers.get("x-vercel-oidc-token") ||
-    process.env["VERCEL_OIDC_TOKEN"] ||
-    undefined
-  );
+export function getGatewayKey(): string | undefined {
+  return process.env["CLOUDFLARE_API_TOKEN"] || undefined;
+}
+export function getCloudflareAccountId(): string | undefined {
+  return process.env["CLOUDFLARE_ACCOUNT_ID"] || undefined;
 }
 
-type GatewayImageResponse = {
-  data?: { b64_json?: string }[];
-  error?: { message?: string };
+type CloudflareResponse = {
+  success?: boolean;
+  result?: { image?: string };
+  errors?: { message?: string; code?: number }[];
 };
-
 function sse(event: string, payload: unknown) {
-  return `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
+  return `event: ${event}\\ndata: ${JSON.stringify(payload)}\\n\\n`;
 }
-
-function callGateway(apiKey: string, form: FormData, signal?: AbortSignal) {
-  form.set("model", MODEL);
-  // The gateway does not support streaming partial edits, so these are never forwarded.
-  form.delete("stream");
-  form.delete("partial_images");
-  return fetch(GATEWAY_URL, {
+function cloudflareError(json: CloudflareResponse | null, status: number) {
+  const message = json?.errors?.map(error => error.message).filter(Boolean).join("; ");
+  if (status === 429) return "Cloudflare's free AI allowance or rate limit has been reached. Please try again later.";
+  if (status === 401 || status === 403) return "Cloudflare rejected the API credentials. Check CLOUDFLARE_API_TOKEN permissions.";
+  return message || `Cloudflare image generation failed (${status}).`;
+}
+async function callCloudflare(token: string, accountId: string, input: FormData, signal?: AbortSignal) {
+  const prompt = String(input.get("prompt") ?? "").trim();
+  if (!prompt) throw new Error("An image prompt is required.");
+  const images = input.getAll("image[]").filter((value): value is File => value instanceof File && value.size > 0);
+  const legacyImages = input.getAll("image").filter((value): value is File => value instanceof File && value.size > 0);
+  const sourceImages = [...images, ...legacyImages].slice(0, 4);
+  const form = new FormData();
+  form.set("prompt", prompt);
+  form.set("width", "1024");
+  form.set("height", "768");
+  sourceImages.forEach((image, index) => form.append(`input_image_${index}`, image, image.name || `reference-${index}.png`));
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}` },
+    headers: { Authorization: `Bearer ${token}` },
     body: form,
     ...(signal ? { signal } : {}),
   });
+  const json = await response.json().catch(() => null) as CloudflareResponse | null;
+  if (!response.ok || !json?.success || !json.result?.image) {
+    throw new Error(cloudflareError(json, response.status));
+  }
+  return json.result.image;
 }
 
-/**
- * Edits an image and returns a Response the browser's `streamImage()` helper understands.
- *
- * AI Gateway returns one finished JSON image. When the client asked for a stream (the default),
- * we answer immediately with an SSE stream, keep it alive with comment pings while the model
- * works, then emit a single `image_edit.completed` event. This keeps the client unchanged and
- * avoids it re-sending (and re-billing) the request in its non-streaming fallback.
- */
-export async function editImage(apiKey: string, form: FormData): Promise<Response> {
-  const wantsStream = form.get("stream") !== "false";
-
-  if (!wantsStream) {
-    const upstream = await callGateway(apiKey, form);
-    return new Response(upstream.body, {
-      status: upstream.status,
-      headers: {
-        "Content-Type": upstream.headers.get("Content-Type") ?? "application/json",
-        "Cache-Control": "no-cache, no-transform",
-      },
-    });
-  }
-
+/** Keeps the existing SSE contract so the UI does not need a provider-specific client. */
+export async function editImage(token: string, form: FormData): Promise<Response> {
+  const accountId = getCloudflareAccountId();
+  if (!accountId) return Response.json({ message: "Cloudflare AI is not configured. Set CLOUDFLARE_ACCOUNT_ID." }, { status: 503 });
   const abort = new AbortController();
   const encoder = new TextEncoder();
   let ping: ReturnType<typeof setInterval> | undefined;
-
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const send = (text: string) => {
-        try {
-          controller.enqueue(encoder.encode(text));
-        } catch {
-          /* client went away */
-        }
-      };
-      send(": connected\n\n");
-      ping = setInterval(() => send(": ping\n\n"), PING_MS);
+      const send = (value: string) => { try { controller.enqueue(encoder.encode(value)); } catch { /* client disconnected */ } };
+      send(": connected\\n\\n");
+      ping = setInterval(() => send(": ping\\n\\n"), PING_MS);
       try {
-        const upstream = await callGateway(apiKey, form, abort.signal);
-        const json = (await upstream.json().catch(() => null)) as GatewayImageResponse | null;
-        const b64 = json?.data?.[0]?.b64_json;
-        if (!upstream.ok || !b64) {
-          console.error("AI Gateway image edit failed", upstream.status, json?.error?.message);
-          send(
-            sse("error", {
-              type: "error",
-              error: {
-                message:
-                  json?.error?.message ??
-                  (upstream.ok
-                    ? "Image generation returned no image"
-                    : `Image generation failed (${upstream.status})`),
-              },
-            }),
-          );
-        } else {
-          send(sse("image_edit.completed", { type: "image_edit.completed", b64_json: b64 }));
-        }
+        const b64 = await callCloudflare(token, accountId, form, abort.signal);
+        send(sse("image_edit.completed", { type: "image_edit.completed", b64_json: b64 }));
       } catch (error) {
         if (!abort.signal.aborted) {
-          console.error("AI Gateway image edit threw", error);
-          send(sse("error", { type: "error", error: { message: "Image generation failed" } }));
+          const message = error instanceof Error ? error.message : "Cloudflare image generation failed.";
+          console.error("Cloudflare Workers AI image edit failed", message);
+          send(sse("error", { type: "error", error: { message } }));
         }
       } finally {
         clearInterval(ping);
-        try {
-          controller.close();
-        } catch {
-          /* already closed */
-        }
+        try { controller.close(); } catch { /* already closed */ }
       }
     },
-    cancel() {
-      clearInterval(ping);
-      abort.abort();
-    },
+    cancel() { clearInterval(ping); abort.abort(); },
   });
-
-  return new Response(body, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      "X-Accel-Buffering": "no",
-    },
-  });
+  return new Response(body, { status: 200, headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no" } });
 }
