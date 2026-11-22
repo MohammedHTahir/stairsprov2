@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowUpRight, Check, ChevronDown, ExternalLink, Image as ImageIcon, Loader2, Search, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowUpRight, Check, ChevronDown, ExternalLink, Image as ImageIcon, Loader2, Search, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,7 @@ export function StaircaseGallery() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Inspiration | null>(null);
   const [detail, setDetail] = useState<Inspiration | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState('');\n  const requestId = useRef(0);
   const load = useCallback(async (reset = false) => {
     if (loading) return;
     setLoading(true); setError('');
@@ -42,8 +42,8 @@ export function StaircaseGallery() {
       const message = e instanceof Error ? e.message : 'Could not load staircase inspiration.';
       setError(message); if (!reset) toast.error(message);
     } finally { setLoading(false); }
-  }, [layout, material, offset, loading]);
-  useEffect(() => { setImages([]); setOffset(0); void load(true); }, [layout, material]);
+  }, [layout, material, offset]);
+  useEffect(() => { setImages([]); setOffset(0); void load(true); // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [layout, material]);
   const visible = images.filter(item => !search.trim() || item.title.toLowerCase().includes(search.toLowerCase()) || item.author.toLowerCase().includes(search.toLowerCase()));
   const choose = (item: Inspiration) => { setSelected(item); setDetail(null); toast.success('Reference selected for your staircase design.'); };
   return <main className="min-h-screen bg-background">
