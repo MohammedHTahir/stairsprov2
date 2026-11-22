@@ -73,7 +73,6 @@ export function VisualizationWorkspace() {
       const matchedReference = matchData.images?.[0]?.imageUrl;
       if (!matchResponse.ok || !matchedReference) throw new Error(matchData.message ?? 'Could not find a matching staircase reference.');
       setReference(matchedReference);
-      setProductId('automatic');
       const form = new FormData(); form.append('room', await imageBlob(room), 'room.png'); form.append('reference', await imageBlob(matchedReference), 'reference.png');
       if (refine && result) form.append('previous', await imageBlob(result), 'previous.png');
       if (room) form.append('modelRoom', await modelInputBlob(room), 'room.jpg');
