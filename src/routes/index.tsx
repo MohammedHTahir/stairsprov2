@@ -1,9 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { VisualizationWorkspace } from '@/components/VisualizationWorkspace';
-export const Route = createFileRoute('/')({ head: () => ({ meta: [
-  { title: 'Sahaab Stair Studio — Staircase visualization' },
-  { name: 'description', content: 'Visualize premium timber, steel and glass staircases in your own room.' },
-  { property: 'og:title', content: 'Sahaab Stair Studio — Staircase visualization' },
-  { property: 'og:description', content: 'Upload your room and configure a contemporary timber-and-steel staircase.' },
-  { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary_large_image' },
-] }), component: VisualizationWorkspace });
+import { StaircaseMatcher } from '@/components/StaircaseMatcher';
+
+export const Route = createFileRoute('/')({
+  head: () => ({
+    meta: [
+      { title: 'Sahaab Stair Studio — Find your staircase' },
+      { name: 'description', content: 'Choose your staircase layout, timber and steel finishes to find the closest real staircase reference.' },
+      { property: 'og:title', content: 'Sahaab Stair Studio — Find your staircase' },
+      { property: 'og:description', content: 'Find the closest real staircase photograph for your chosen configuration.' },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+    ],
+  }),
+  component: StaircaseMatcher,
+});
