@@ -59,7 +59,7 @@ export function VisualizationWorkspace() {
       const form = new FormData(); form.append('room', await imageBlob(room), 'room.png'); form.append('reference', await imageBlob(reference), 'reference.png');
       if (refine && result) form.append('previous', await imageBlob(result), 'previous.png');
       form.append('settings', JSON.stringify({ ...settings, refinement: refine ? settings.refinement : '', referenceKind: productId === 'spiral' ? 'spiral' : productId === 'support-b' ? 'side' : products.find(p => p.id === productId)?.type === 'Support component' ? 'support' : 'complete' }));
-      let final = ''; await streamImage('/api/visualize', form, (src, isFinal) => { setPreview(src); setPartial(!isFinal); if (isFinal) final = src; }, { headers: { Authorization: `Bearer ${token}` } });
+      let final = ''; await streamImage('/api/visualize', form, (src, isFinal) => { setPreview(src); setPartial(!isFinal); if (isFinal) final = src; }, undefined, { Authorization: `Bearer ${token}` });
       if (!final) throw new Error('The visualization did not finish.');
       const item = { src: final, instruction: refine ? settings.refinement : 'Initial visualization', saved: false }; setHistory(h => [...h, item]); setActive(history.length); setPreview(''); setView('result'); update({ refinement: '' });
     } catch(e) { setPreview(''); setError(e instanceof Error ? e.message : 'Image generation failed.'); } finally { setBusy(false); setPartial(false); }
