@@ -83,10 +83,10 @@ export function VisualizationWorkspace() {
       const jpeg = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/jpeg', 0.92)); if (!jpeg) throw new Error('Could not prepare the picture.');
       const form = new FormData(); form.append('image', jpeg, 'room.jpg');
       const res = await fetch('/api/world', { method: 'POST', body: form, headers: await auth() });
-      const started = await res.json() as { operationId?: string; owner?: string; message?: string }; if (!res.ok || !started.operationId || started.owner !== user?.id) throw new Error(started.message ?? 'Could not start the 3D room.');
+      const started = await res.json() as { operationId?: string; message?: string }; if (!res.ok || !started.operationId) throw new Error(started.message ?? 'Could not start the 3D room.');
       for (let i = 0; i < 180; i++) {
         await new Promise(r => setTimeout(r, 5000));
-        const poll = await fetch(`/api/world?op=${started.operationId}&owner=${encodeURIComponent(user?.id ?? '')}`, { headers: await auth() });
+        const poll = await fetch(`/api/world?op=${started.operationId}`, { headers: await auth() });
         const json = await poll.json() as { done?: boolean; progress?: string; message?: string; splat?: string; scale?: number; ground?: number };
         if (!poll.ok) throw new Error(json.message ?? 'The 3D room could not be built.');
         if (json.done && json.splat) { const world = { splat: json.splat, scale: json.scale ?? 1, ground: json.ground ?? 0 }; set({ status: 'ready', world }); const savedId = historyRef.current.find(h => h.src === src)?.id; if (savedId) { try { await saveWorld(savedId, world); toast.success('3D room saved to your project.'); } catch { toast.error('3D room built, but it could not be saved.'); } } else toast.success('3D room ready — save the project to keep it.'); return; }
