@@ -36,7 +36,7 @@ export const Route = createFileRoute('/api/inspiration')({
     const params = new URLSearchParams({
       action: 'query', generator: 'search', gsrsearch: query, gsrnamespace: '6',
       gsrlimit: '30', gsroffset: String(offset), prop: 'imageinfo',
-      iiprop: 'url|extmetadata', iiurlwidth: '1000', format: 'json', formatversion: '2',
+      iiprop: 'url|extmetadata', iiextmetadatafilter: 'Artist|LicenseShortName', iiurlwidth: '1000', format: 'json', formatversion: '2',
     });
     try {
       const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`, {
