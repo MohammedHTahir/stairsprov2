@@ -1,52 +1,40 @@
-# Welcome to your Lovable project
+# Sahaab Stair Studio
 
-This project was built with [Lovable](https://lovable.dev).
+A staircase design and inspiration workspace built with TanStack Start, React, TypeScript, Supabase and Three.js.
 
-## Build with Lovable
+## Gallery-first experience
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+The home page opens directly into the staircase inspiration gallery. It searches Wikimedia Commons for real staircase photography and supports filters for:
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- Staircase layout: straight, L-shaped, U-shaped, spiral and floating.
+- Materials: wood/timber, glass, steel/metal and stone/marble.
+- Keyword search within loaded results.
+- Progressive loading, with 30 results per request.
+
+The gallery requires no image-generation model or API key. Images are hotlinked from Wikimedia Commons, with the photographer/contributor, license and original file page shown with each result. The selected reference is saved in the browser under `sahaab:selected-staircase-reference`.
+
+Images are inspiration references only; they are not AI-generated previews of the customer's room and are not engineering drawings. Users should review the original file page and license before reusing an image outside the reference experience.
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Requires Node.js and npm.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+git clone https://github.com/MohammedHTahir/stairsprov2.git
+cd stairsprov2
+npm install
 npm run dev
 ```
 
-## Built with
+## Environment variables
 
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+Configure the Supabase variables from `.env.example` for authentication and private project storage. Configure `WORLDLABS_API_KEY` only if the optional 3D room workflow is used.
+
+The public inspiration gallery itself does not require a provider key. It uses the Wikimedia Commons Action API through the server route `/api/inspiration`, which caches search responses at the edge.
 
 ## Deploying to Vercel
 
-1. Push the repo to GitHub and import it at [vercel.com/new](https://vercel.com/new) (TanStack Start + Nitro is detected automatically).
-2. Add environment variables (Project → Settings → Environment Variables):
-   - `AI_GATEWAY_API_KEY` — from the Vercel AI Gateway dashboard (image edits use `openai/gpt-image-2.5-sunburst`)
-   - `WORLDLABS_API_KEY` — for 3D rooms
-   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` (and the non-`VITE_` equivalents in `.env.example`)
-3. Deploy.
-
-The image model is set in `src/lib/image-gateway.server.ts`. AI Gateway does not stream partial image edits, so that file emits a single SSE `completed` event to the browser.
-
-
-## Free AI image generation (Cloudflare Workers AI)
-
-Image generation uses Black Forest Labs FLUX.2 [klein] 4B through Cloudflare Workers AI. This replaces the paid Vercel AI Gateway image model. The model accepts up to four reference images for image editing; the browser prepares reference copies below 512x512 while retaining original-resolution images in the workspace and Supabase project storage.
-
-Configure these server-side environment variables in Vercel and local development:
-
-- `CLOUDFLARE_ACCOUNT_ID`: your Cloudflare account ID.
-- `CLOUDFLARE_API_TOKEN`: an API token with Workers AI Run permission. Never expose it as a `VITE_*` variable.
-
-Cloudflare Workers AI currently includes 10,000 free neurons per day, resetting at 00:00 UTC. Once the free allowance is exhausted, generation requests are rejected until reset; no paid overage is enabled on the Workers Free plan. See [Cloudflare Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/) and [FLUX.2 Klein 4B documentation](https://developers.cloudflare.com/workers-ai/models/flux-2-klein-4b/).
+1. Import the repository at [Vercel](https://vercel.com/new).
+2. Add the Supabase environment variables from `.env.example`.
+3. Add `WORLDLABS_API_KEY` if the optional 3D room workflow is enabled.
+4. Deploy.
