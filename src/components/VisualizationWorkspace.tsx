@@ -18,6 +18,18 @@ import { imageBlob, saveWorld, saveVisualization, listVisualizations, openVisual
 import { streamImage } from '@/lib/stream-image';
 import type { User } from '@supabase/supabase-js';
 type History = { src: string; instruction: string; saved: boolean; id?: string };
+async function modelInputBlob(src: string) {
+  const bitmap = await createImageBitmap(await imageBlob(src));
+  const scale = Math.min(1, 510 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext('2d');
+  if (!context) { bitmap.close(); throw new Error('Could not prepare the reference image.'); }
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not prepare the reference image.')), 'image/jpeg', 0.88));
+}
 async function normalizePhoto(file: File) {
   if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 20 * 1024 * 1024) throw new Error('Use a JPG, PNG or WebP photo up to 20 MB.');
   const bitmap = await createImageBitmap(file); const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
@@ -58,6 +70,9 @@ export function VisualizationWorkspace() {
       if (!token) throw new Error('Your session expired. Please sign in again.');
       const form = new FormData(); form.append('room', await imageBlob(room), 'room.png'); form.append('reference', await imageBlob(reference), 'reference.png');
       if (refine && result) form.append('previous', await imageBlob(result), 'previous.png');
+      if (room) form.append('modelRoom', await modelInputBlob(room), 'room.jpg');
+      if (reference) form.append('modelReference', await modelInputBlob(reference), 'reference.jpg');
+      if (refine && result) form.append('modelPrevious', await modelInputBlob(result), 'previous.jpg');
       form.append('settings', JSON.stringify({ ...settings, refinement: refine ? settings.refinement : '', referenceKind: productId === 'spiral' ? 'spiral' : productId === 'support-b' ? 'side' : products.find(p => p.id === productId)?.type === 'Support component' ? 'support' : 'complete' }));
       let final = ''; await streamImage('/api/visualize', form, (src, isFinal) => { setPreview(src); setPartial(!isFinal); if (isFinal) final = src; }, undefined, { Authorization: `Bearer ${token}` });
       if (!final) throw new Error('The visualization did not finish.');
