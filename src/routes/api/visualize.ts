@@ -3,8 +3,8 @@ import { authenticateRequest } from '@/integrations/supabase/auth-middleware';
 import { visualizationSchema, buildVisualizationPrompt, buildHousePrompt } from '@/lib/visualization';
 export const Route = createFileRoute('/api/visualize')({ server: { handlers: { POST: async ({ request }) => {
   const auth = await authenticateRequest(request); if ('response' in auth) return auth.response;
-  const { getGatewayKey, getCloudflareAccountId } = await import('@/lib/image-gateway.server'); const apiKey = getGatewayKey();
-  if (!apiKey || !getCloudflareAccountId()) return Response.json({ message: 'Cloudflare Workers AI is not configured. Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN.' }, { status: 503 });
+  const { getCloudflareApiToken, getCloudflareAccountId } = await import('@/lib/image-gateway.server'); const cloudflareToken = getCloudflareApiToken();
+  if (!cloudflareToken || !getCloudflareAccountId()) return Response.json({ message: 'Cloudflare Workers AI is not configured. Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN.' }, { status: 503 });
   try {
     const input = await request.formData();
     const settings = visualizationSchema.parse(JSON.parse(String(input.get('settings') ?? '{}')));
@@ -26,6 +26,6 @@ export const Route = createFileRoute('/api/visualize')({ server: { handlers: { P
     prompt = prompt.replace('The supplied transparent mask marks the editable region.', 'Use the listed normalized coordinates as the editable-area guide and preserve the rest of the room.');
     form.set('prompt', prompt); form.set('stream', String(input.get('stream') !== 'false'));
     const { editImage } = await import('@/lib/image-gateway.server');
-    return editImage(apiKey, form);
+    return editImage(cloudflareToken, form);
   } catch (error) { if (error instanceof SyntaxError || (error instanceof Error && error.name === 'ZodError')) return Response.json({ message: 'Invalid placement or image settings.' }, { status: 400 }); throw error; }
 } } } });
