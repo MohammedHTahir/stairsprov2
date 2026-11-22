@@ -8,8 +8,8 @@ export const Route = createFileRoute("/api/blend")({
       POST: async ({ request }) => {
         const auth = await authenticateRequest(request);
         if ('response' in auth) return auth.response;
-        const cloudflareToken = getCloudflareApiToken(request);
-        if (!cloudflareToken) return new Response("AI Gateway is not configured", { status: 500 });
+        const cloudflareToken = getCloudflareApiToken();
+        if (!cloudflareToken) return new Response("Cloudflare Workers AI is not configured", { status: 503 });
         const form = await request.formData();
         return editImage(cloudflareToken, form);
       },
