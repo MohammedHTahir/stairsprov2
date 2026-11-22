@@ -113,7 +113,7 @@ export const Route = createFileRoute('/api/inspiration')({
             if (!page.title || !info?.thumburl || !info.descriptionurl || unique.has(page.title)) continue;
             const metadata = info.extmetadata ?? {};
             const description = clean(metadata.ImageDescription?.value);
-            const title = page.title.replace(/^File:/, '').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+            const title = page.title.replace(/^File:/, '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
             const score = scoreCandidate(`${title} ${description}`, layout, wood, metal, support);
             if (score < 10) continue;
             const author = clean(metadata.Artist?.value) || 'Wikimedia Commons contributor';
