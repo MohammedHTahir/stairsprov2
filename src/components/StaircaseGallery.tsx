@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowUpRight, Check, ChevronDown, ExternalLink, Image as ImageIcon, Loader2, Search, SlidersHorizontal } from 'lucide-react';
+import { Check, ChevronDown, ExternalLink, Image as ImageIcon, Loader2, Search, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
