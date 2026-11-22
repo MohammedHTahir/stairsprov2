@@ -44,15 +44,17 @@ export const Route = createFileRoute('/api/inspiration')({
         const url = new URL(request.url);
         const layoutId = url.searchParams.get('layout') ?? 'all';
         const layout = layouts[layoutId] ?? layouts.all;
-        const offset = Math.max(0, Math.min(500, Number(url.searchParams.get('offset') ?? 0) || 0));
-        const query = [layout.search, 'wood OR timber OR oak', 'glass OR balustrade', 'steel OR metal'].join(' ');
+        const treadColor = url.searchParams.get('treadColor') ?? 'reference';
+        const metalColor = url.searchParams.get('metalColor') ?? 'reference';
+        const woodTerm = treadColor.includes('walnut') ? 'walnut' : treadColor === 'black-oak' ? 'black oak' : 'oak OR timber';
+        const metalTerm = metalColor === 'bronze' ? 'bronze metal' : metalColor === 'white' ? 'white steel' : metalColor === 'brushed-steel' ? 'brushed steel' : 'black steel';
+        const query = `(${layout.search}) (${woodTerm}) (glass OR balustrade) (${metalTerm} OR steel OR metal)`;
         const params = new URLSearchParams({
           action: 'query',
           generator: 'search',
           gsrsearch: query,
           gsrnamespace: '6',
           gsrlimit: '50',
-          gsroffset: String(offset),
           prop: 'imageinfo',
           iiprop: 'url|extmetadata',
           iiextmetadatafilter: 'Artist|LicenseShortName',
@@ -103,7 +105,7 @@ export const Route = createFileRoute('/api/inspiration')({
 
           return Response.json({
             images,
-            nextOffset: data.continue?.gsroffset ?? null,
+            nextOffset: null,
             category: layout.label,
             query,
           }, {
