@@ -43,7 +43,6 @@ export const Route = createFileRoute('/api/inspiration')({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const layoutId = url.searchParams.get('layout') ?? 'all';
-        const material = url.searchParams.get('material') ?? 'all';
         const layout = layouts[layoutId] ?? layouts.all;
         const offset = Math.max(0, Math.min(500, Number(url.searchParams.get('offset') ?? 0) || 0));
         const query = [layout.search, 'wood OR timber OR oak', 'glass OR balustrade', 'steel OR metal'].join(' ');
