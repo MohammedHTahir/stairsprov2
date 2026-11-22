@@ -27,7 +27,7 @@ export function StaircaseGallery() {
   const [detail, setDetail] = useState<Inspiration | null>(null);
   const [search, setSearch] = useState('');\n  const requestId = useRef(0);
   const load = useCallback(async (reset = false) => {
-    if (loading) return;
+    const id = ++requestId.current;
     setLoading(true); setError('');
     try {
       const start = reset ? 0 : offset;
@@ -36,12 +36,13 @@ export function StaircaseGallery() {
       const data = await response.json() as GalleryResponse;
       if (!response.ok) throw new Error(data.message ?? 'Could not load staircase inspiration.');
       const next = data.images ?? [];
+      if (id !== requestId.current) return;
       setImages(current => reset ? next : [...current, ...next.filter(item => !current.some(existing => existing.id === item.id))]);
       setOffset(data.nextOffset ?? null);
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Could not load staircase inspiration.';
-      setError(message); if (!reset) toast.error(message);
-    } finally { setLoading(false); }
+      if (id === requestId.current) { setError(message); if (!reset) toast.error(message); }
+    } finally { if (id === requestId.current) setLoading(false); }
   }, [layout, material, offset]);
   useEffect(() => { setImages([]); setOffset(0); void load(true); // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [layout, material]);
   const visible = images.filter(item => !search.trim() || item.title.toLowerCase().includes(search.toLowerCase()) || item.author.toLowerCase().includes(search.toLowerCase()));
