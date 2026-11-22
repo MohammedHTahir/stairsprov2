@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { PhotoComparison } from './PhotoComparison';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthDialog } from '@/components/AuthDialog';
-import { exampleRoom, exampleResult, products } from '@/lib/visualization-library';
+import { exampleRoom, exampleResult } from '@/lib/visualization-library';
 import { defaultSettings, visualizationSchema, treadColors, metalColors, wallStyles, floorStyles, lightingStyles, type VisualizationSettings } from '@/lib/visualization';
 import { imageBlob, saveWorld, saveVisualization, listVisualizations, openVisualization } from '@/lib/visualization-projects';
 import { streamImage } from '@/lib/stream-image';
@@ -39,7 +39,7 @@ export function VisualizationWorkspace() {
   const router = useRouter();
   const routerStatus = useRouterState({ select: state => state.status });
   const [user, setUser] = useState<User | null>(null);
-  const [room, setRoom] = useState(exampleRoom); const [reference, setReference] = useState(products[0]?.image ?? ''); const [productId, setProductId] = useState('floating');
+  const [room, setRoom] = useState(exampleRoom); const [reference, setReference] = useState(''); const [productId, setProductId] = useState('automatic');
   const [settings, setSettings] = useState<VisualizationSettings>(defaultSettings);
   const [history, setHistory] = useState<History[]>([]); const [active, setActive] = useState(-1); const [preview, setPreview] = useState(''); const [busy, setBusy] = useState(false); const [partial, setPartial] = useState(false); const [error, setError] = useState('');
   const [mode, setMode] = useState<'none'|'start'|'landing'|'region'>('none'); const [drawing, setDrawing] = useState(false);
@@ -48,11 +48,11 @@ export function VisualizationWorkspace() {
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false); const [displayName, setDisplayName] = useState(''); const [company, setCompany] = useState('');
   const [viewer3d, setViewer3d] = useState(false); const [worlds, setWorlds] = useState<Record<string, WorldState>>({}); const [resetKey, setResetKey] = useState(0);
-  const roomInput = useRef<HTMLInputElement>(null); const cameraInput = useRef<HTMLInputElement>(null); const referenceInput = useRef<HTMLInputElement>(null);
+  const roomInput = useRef<HTMLInputElement>(null); const cameraInput = useRef<HTMLInputElement>(null);
   useEffect(() => { void supabase.auth.getUser().then(({ data }) => setUser(data.user)); }, [routerStatus]);
   const result = history[active]?.src ?? ''; const historyRef = useRef(history); historyRef.current = history;
   const update = (patch: Partial<VisualizationSettings>) => setSettings(s => ({ ...s, ...patch }));
-  const reset = () => { setRoom(exampleRoom); setReference(products[0]?.image ?? ''); setProductId('floating'); setSettings(defaultSettings); setHistory([]); setActive(-1); setProjectId(undefined); setName('Untitled room'); setPreview(''); setError(''); setTab('design'); setMode('none'); };
+  const reset = () => { setRoom(exampleRoom); setReference(''); setProductId('automatic'); setSettings(defaultSettings); setHistory([]); setActive(-1); setProjectId(undefined); setName('Untitled room'); setPreview(''); setError(''); setTab('design'); setMode('none'); };
   const upload = async (file: File | undefined, isRoom: boolean) => { if (!file) return; try { const src = await normalizePhoto(file); if (isRoom) { setRoom(src); setHistory([]); setActive(-1); setSettings(defaultSettings); setProjectId(undefined); setPreview(''); setName(file.name.replace(/\.[^.]+$/, '')); } else { setReference(src); setProductId('custom'); } } catch(e) { toast.error(e instanceof Error ? e.message : 'Could not open photo.'); } };
   const pointerPoint = (event: React.PointerEvent<SVGSVGElement>) => { const rect = event.currentTarget.getBoundingClientRect(); return { x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)), y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) }; };
   async function makeMask() {
@@ -61,19 +61,25 @@ export function VisualizationWorkspace() {
     ctx.fillStyle = 'black'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.globalCompositeOperation = 'destination-out'; ctx.beginPath(); settings.region.forEach((p,i) => i ? ctx.lineTo(p.x*canvas.width,p.y*canvas.height) : ctx.moveTo(p.x*canvas.width,p.y*canvas.height)); ctx.closePath(); ctx.fill(); return new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
   }
   async function generate(refine = false) {
-    if (busy || !room || !reference) return;
+    if (busy || !room) return;
     if (!user) { toast.error('Sign in to generate private visualizations.'); return; }
     setBusy(true); setError(''); setPreview(''); setPartial(true);
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
       if (!token) throw new Error('Your session expired. Please sign in again.');
-      const form = new FormData(); form.append('room', await imageBlob(room), 'room.png'); form.append('reference', await imageBlob(reference), 'reference.png');
+      const matchResponse = await fetch(`/api/inspiration?layout=${encodeURIComponent(settings.layout)}`);
+      const matchData = await matchResponse.json() as { images?: Array<{ imageUrl: string }>; message?: string };
+      const matchedReference = matchData.images?.[0]?.imageUrl;
+      if (!matchResponse.ok || !matchedReference) throw new Error(matchData.message ?? 'Could not find a matching staircase reference.');
+      setReference(matchedReference);
+      setProductId('automatic');
+      const form = new FormData(); form.append('room', await imageBlob(room), 'room.png'); form.append('reference', await imageBlob(matchedReference), 'reference.png');
       if (refine && result) form.append('previous', await imageBlob(result), 'previous.png');
       if (room) form.append('modelRoom', await modelInputBlob(room), 'room.jpg');
-      if (reference) form.append('modelReference', await modelInputBlob(reference), 'reference.jpg');
+      if (matchedReference) form.append('modelReference', await modelInputBlob(matchedReference), 'reference.jpg');
       if (refine && result) form.append('modelPrevious', await modelInputBlob(result), 'previous.jpg');
-      form.append('settings', JSON.stringify({ ...settings, refinement: refine ? settings.refinement : '', referenceKind: productId === 'spiral' ? 'spiral' : productId === 'support-b' ? 'side' : products.find(p => p.id === productId)?.type === 'Support component' ? 'support' : 'complete' }));
+      form.append('settings', JSON.stringify({ ...settings, refinement: refine ? settings.refinement : '', referenceKind: 'complete' }));
       let final = ''; await streamImage('/api/visualize', form, (src, isFinal) => { setPreview(src); setPartial(!isFinal); if (isFinal) final = src; }, undefined, { Authorization: `Bearer ${token}` });
       if (!final) throw new Error('The visualization did not finish.');
       const item = { src: final, instruction: refine ? settings.refinement : 'Initial visualization', saved: false }; setHistory(h => [...h, item]); setActive(history.length); setPreview(''); setView('result'); update({ refinement: '' });
@@ -132,13 +138,11 @@ export function VisualizationWorkspace() {
           {!result && <div className="mt-8 border-t pt-5"><div className="mb-3 flex justify-between"><h2 className="font-display text-2xl">A change of perspective</h2><span className="text-xs text-muted-foreground">Your supplied example</span></div><div className="max-w-md overflow-hidden rounded-md"><PhotoComparison before={exampleRoom} after={exampleResult} label="Example after" /></div></div>}
         </section>
         <aside className="min-w-0 border-t pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-          <><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-semibold">01 <span className="ml-2">Staircase reference</span></h2><Button variant="ghost" size="icon" aria-label="Upload staircase reference" title="Upload staircase reference" disabled={busy} onClick={() => referenceInput.current?.click()}><Upload /></Button></div>
-            {productId === 'custom' && <img src={reference} alt="Your staircase reference" className="mb-3 max-h-40 w-full rounded-md border object-contain" />}
-            <div className="grid grid-cols-2 gap-3">{products.map(p => <Button key={p.id} variant="ghost" disabled={busy} className={`relative h-auto flex-col gap-0 overflow-hidden rounded-md border p-0 text-left ${productId === p.id ? 'border-accent ring-1 ring-accent' : 'border-border'}`} onClick={() => { setReference(p.image); setProductId(p.id); }}><img src={p.image} alt={p.name} className="aspect-[4/3] w-full bg-card object-contain" /><span className="w-full whitespace-normal px-2 pb-2 pt-1"><span className="block text-[11px] font-medium">{p.name}</span><span className="text-[10px] text-muted-foreground">{p.type}</span></span>{productId === p.id && <Check className="absolute right-2 top-2 rounded-full bg-accent text-accent-foreground" />}</Button>)}</div>
-            <Button variant="outline" className="mt-3 w-full" onClick={() => referenceInput.current?.click()} disabled={busy}><Plus /> Upload your staircase</Button>
+          <><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-semibold">01 <span className="ml-2">Staircase style</span></h2></div>
+            <div className="rounded-lg border bg-card p-3"><p className="text-sm font-medium">Automatic reference matching</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Sahaab selects the closest timber, dark-steel and frameless-glass staircase reference for your chosen layout. Reference photographs are used internally during generation and are never displayed in a gallery.</p></div>
             <div className="mt-5 grid grid-cols-2 gap-3"><label className="text-xs text-muted-foreground">Layout<select aria-label="Staircase layout" value={settings.layout} onChange={e => update({ layout: e.target.value as VisualizationSettings['layout'] })} className="mt-2 h-10 w-full rounded-md border bg-background px-2 text-xs text-foreground"><option value="reference">Match reference</option><option value="straight">Straight</option><option value="l-shaped">L-shaped</option><option value="u-shaped">U-shaped</option><option value="cantilevered">Cantilevered</option></select></label><label className="text-xs text-muted-foreground">Wood color<select aria-label="Wood color" value={settings.treadColor} onChange={e => update({ treadColor: e.target.value as VisualizationSettings['treadColor'] })} className="mt-2 h-10 w-full rounded-md border bg-background px-2 text-xs text-foreground">{Object.entries(treadColors).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label><label className="text-xs text-muted-foreground">Metal color<select aria-label="Metal color" value={settings.metalColor} onChange={e => update({ metalColor: e.target.value as VisualizationSettings['metalColor'] })} className="mt-2 h-10 w-full rounded-md border bg-background px-2 text-xs text-foreground">{Object.entries(metalColors).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label><label className="text-xs text-muted-foreground">Wall design<select aria-label="Wall design" value={settings.wallStyle} onChange={e => update({ wallStyle: e.target.value as VisualizationSettings['wallStyle'] })} className="mt-2 h-10 w-full rounded-md border bg-background px-2 text-xs text-foreground">{Object.entries(wallStyles).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label><label className="text-xs text-muted-foreground">Floor style<select aria-label="Floor style" value={settings.floorStyle} onChange={e => update({ floorStyle: e.target.value as VisualizationSettings['floorStyle'] })} className="mt-2 h-10 w-full rounded-md border bg-background px-2 text-xs text-foreground">{Object.entries(floorStyles).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label><div className="col-span-2"><label className="text-xs text-muted-foreground">Lighting<select aria-label="Lighting" value={settings.lighting} onChange={e => update({ lighting: e.target.value as VisualizationSettings['lighting'] })} className="mt-2 h-10 w-full rounded-md border bg-background px-2 text-xs text-foreground">{Object.entries(lightingStyles).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label></div></div><p className="mt-3 text-[11px] text-muted-foreground">Frameless glass side panel on every design except the spiral, which has its curved metal side panel.</p>
           </>
-          <div className="mt-6 border-t pt-5"><Button className="h-12 w-full" disabled={busy || !room || !reference} onClick={() => generate(false)}>{busy ? <Loader2 className="animate-spin" /> : <Sparkles />}{result ? 'Generate another variation' : 'Generate visualization'}</Button><p className="mt-2 text-center text-[11px] text-muted-foreground">A new realistic home is created around your staircase.</p></div>
+          <div className="mt-6 border-t pt-5"><Button className="h-12 w-full" disabled={busy || !room} onClick={() => generate(false)}>{busy ? <Loader2 className="animate-spin" /> : <Sparkles />}{result ? 'Generate another variation' : 'Generate visualization'}</Button><p className="mt-2 text-center text-[11px] text-muted-foreground">A new realistic home is created around your staircase.</p></div>
           {result && <form className="mt-6 space-y-3 border-t pt-5" onSubmit={e => { e.preventDefault(); generate(true); }}><h2 className="text-sm font-semibold">Refine this result</h2><Textarea aria-label="Refinement request" value={settings.refinement} maxLength={2000} onChange={e => update({ refinement: e.target.value })} placeholder="Change the treads to walnut…" /><Button type="submit" variant="outline" className="w-full" disabled={busy || !settings.refinement.trim()}><Sparkles /> Apply refinement</Button></form>}
         </aside>
       </div>
