@@ -1,23 +1,19 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
+# Sahaab Stair Studio — repository guidance
 
-- Legacy 3D projects persist in browser localStorage; the photo visualization workspace stores private projects, profiles, and image history in Cloud with owner-only RLS so visualization projects work across devices without destroying legacy data.
-- Photoreal blend composites photo + WebGL canvas client-side, then streams an image edit via the /api/blend server route — the API key must stay server-side.
-- Imported Blender/CAD model files live in IndexedDB (src/lib/imports.ts), metadata in localStorage — files are too large for localStorage.
-- Whole-room scans use a separate client-only viewer and IndexedDB store with atomic file/metadata writes; preserve exported GLB geometry and scale instead of using parametric staircase fitting.
-- The primary photo workspace lives in focused components and sends ordered original-room, product-reference, and optional previous-result images to an authenticated streaming server route; normalized placement and masks guide edits without modifying source photos.
-- Only the root subscribes to identity transitions for auth cache invalidation; the password recovery page separately listens for recovery events to authorize its form.
-- Walk-through 3D rooms come from World Labs Marble via the authenticated /api/world route (key stays server-side, client polls the operation) and render as Gaussian splats with Spark; single-photo depth/mesh tricks were rejected because they smear edges.
-- Built 3D rooms are saved as a nullable world JSON on visualization_images (splat URL, scale, ground) so walkthroughs reopen without re-spending credits; the multi-floor stair shaft is a standalone client-only /building route driven by pure layout math in src/lib/building.ts.
-- Supabase email/password authentication is available in the workspace. Image generation, blending, and 3D generation endpoints verify a real Supabase user before spending provider credits.
-- Server-side API routes authenticate bearer tokens with Supabase Auth getUser; never trust user IDs supplied in request bodies.
-- Visualization storage uses private `visualizations` bucket and per-user object paths; database tables and storage objects have owner-scoped RLS.
-- AI Gateway and World Labs API keys remain server-side only.
+## Product definition
+This application is a deterministic staircase reference matcher. Customers choose a staircase layout, timber tread colour, steel finish and support style. The server searches existing staircase photographs, scores their descriptive metadata against the selected configuration, and displays the closest existing photograph with source and license attribution.
+
+## Product constraints
+- Do not add AI models, AI Gateway, image generation, image editing, AI-generated 3D, provider API keys, or room-photo generation workflows.
+- Do not create or display a browsable inspiration gallery. Show only the closest matching photograph after the customer submits a configuration.
+- Matching must be transparent and deterministic: use explicit configuration fields and image metadata scoring.
+- Sahaab's visual focus is premium contemporary stairs with thick open timber treads, structural steel and clear glass balustrades.
+- Supported layouts are straight, L-shaped, U-shaped and cantilevered/floating.
+- Preserve source attribution and license links for every selected reference photo.
+- The match result is an existing photograph, not a generated or modified image.
+
+## Development
+- Stack: TanStack Start, React, TypeScript and Vite.
+- Main workflow: src/components/StaircaseMatcher.tsx.
+- Reference matching endpoint: src/routes/api/inspiration.ts.
+- The application should not require Supabase credentials or any AI provider configuration.
