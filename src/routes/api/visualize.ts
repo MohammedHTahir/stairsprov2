@@ -20,7 +20,11 @@ export const Route = createFileRoute('/api/visualize')({ server: { handlers: { P
     if (modelRoom instanceof File) form.append('image[]', modelRoom, 'room.jpg');
     form.append('image[]', modelReference, 'staircase.jpg');
     if (modelPrevious instanceof File) form.append('image[]', modelPrevious, 'previous.jpg');
-    form.set('prompt', house ? buildHousePrompt(settings, previous instanceof File) : buildVisualizationPrompt(settings, previous instanceof File)); form.set('stream', String(input.get('stream') !== 'false'));
+    let prompt = house ? buildHousePrompt(settings, previous instanceof File) : buildVisualizationPrompt(settings, previous instanceof File);
+    // Cloudflare FLUX.2 Klein references input images using zero-based indices.
+    prompt = prompt.replace(/Image 3/gi, 'image 2').replace(/Image 2/gi, 'image 1').replace(/Image 1/gi, 'image 0');
+    prompt = prompt.replace('The supplied transparent mask marks the editable region.', 'Use the listed normalized coordinates as the editable-area guide and preserve the rest of the room.');
+    form.set('prompt', prompt); form.set('stream', String(input.get('stream') !== 'false'));
     const { editImage } = await import('@/lib/image-gateway.server');
     return editImage(apiKey, form);
   } catch (error) { if (error instanceof SyntaxError || (error instanceof Error && error.name === 'ZodError')) return Response.json({ message: 'Invalid placement or image settings.' }, { status: 400 }); throw error; }
