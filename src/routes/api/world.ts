@@ -45,11 +45,13 @@ export const Route = createFileRoute('/api/world')({ server: { handlers: {
     if (!res.ok) { console.error('World Labs generate failed', res.status, (await res.text().catch(() => '')).slice(0, 300)); return Response.json({ message: upstreamError(res.status) }, { status: res.status === 402 || res.status === 429 ? res.status : 502 }); }
     const json = await res.json() as { operation_id?: string };
     if (!json.operation_id) return Response.json({ message: 'The 3D room service did not start.' }, { status: 502 });
-    return Response.json({ operationId: json.operation_id });
+    return Response.json({ operationId: json.operation_id, owner: auth.userId });
   },
   GET: async ({ request }) => {
     const auth = await authorize(request); if (auth.error) return auth.error;
     const op = new URL(request.url).searchParams.get('op') ?? '';
+    const owner = new URL(request.url).searchParams.get('owner') ?? '';
+    if (owner !== auth.userId) return Response.json({ message: 'This operation does not belong to your account.' }, { status: 403 });
     if (!UUID.test(op)) return Response.json({ message: 'Invalid request.' }, { status: 400 });
     const res = await fetch(`${API}/operations/${op}`, { headers: { 'WLT-Api-Key': auth.apiKey } });
     if (!res.ok) return Response.json({ message: upstreamError(res.status) }, { status: 502 });
