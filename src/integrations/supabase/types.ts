@@ -33,22 +33,10 @@ export type Database = {
         Relationships: []
       }
       profiles: {
-        Row: {
-          company: string
-          display_name: string
-          id: string
-        }
-        Insert: {
-          company?: string
-          display_name?: string
-          id: string
-        }
-        Update: {
-          company?: string
-          display_name?: string
-          id?: string
-        }
-        Relationships: []
+        Row: { company: string; display_name: string; id: string; created_at: string; updated_at: string };
+        Insert: { company?: string; display_name?: string; id: string; created_at?: string; updated_at?: string };
+        Update: { company?: string; display_name?: string; id?: string; created_at?: string; updated_at?: string };
+        Relationships: [];
       }
       visualization_images: {
         Row: {
