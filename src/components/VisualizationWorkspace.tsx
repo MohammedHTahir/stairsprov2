@@ -68,7 +68,8 @@ export function VisualizationWorkspace() {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
       if (!token) throw new Error('Your session expired. Please sign in again.');
-      const matchResponse = await fetch(`/api/inspiration?layout=${encodeURIComponent(settings.layout)}`);
+      const matchParams = new URLSearchParams({ layout: settings.layout, treadColor: settings.treadColor, metalColor: settings.metalColor });
+      const matchResponse = await fetch(`/api/inspiration?${matchParams.toString()}`);
       const matchData = await matchResponse.json() as { images?: Array<{ imageUrl: string }>; message?: string };
       const matchedReference = matchData.images?.[0]?.imageUrl;
       if (!matchResponse.ok || !matchedReference) throw new Error(matchData.message ?? 'Could not find a matching staircase reference.');
