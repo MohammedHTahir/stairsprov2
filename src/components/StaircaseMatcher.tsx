@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ImagePlus, LoaderCircle, Search, Shuffle, SlidersHorizontal } from 'lucide-react';
+import { Check, ImagePlus, Search, Shuffle, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   selectStaircaseImage,
