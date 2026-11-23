@@ -1,24 +1,72 @@
 # Sahaab Stair Studio
 
-A rule-based staircase reference matcher built with TanStack Start, React and TypeScript.
+A configuration-driven staircase design finder built with TanStack Start, React and TypeScript. The app selects existing staircase images from a local, curated asset library. It does not generate or edit images.
 
-## Product workflow
+## Customer workflow
 
-1. Choose the staircase layout.
-2. Choose timber colour, steel finish and support style.
+1. Choose the staircase layout: straight, L-shaped, U-shaped, spiral or cantilevered.
+2. Choose the timber colour, side glass panels, steel finish, support style and number of steps.
 3. Select **Find my staircase**.
-4. Sahaab searches its staircase reference collection and ranks real photographs using the selected configuration and image metadata.
-5. The closest matching photograph is displayed with its original source and license attribution.
+4. Sahaab searches the local image catalog, scores candidates against the configuration and randomly selects one of the best matches.
+5. Select **Show another design** to see another equally suitable image.
 
-## Supported staircase style
+The selector never substitutes a different staircase layout. If the exact combination is unavailable, it finds the closest available finish and step-count match within the selected layout.
 
-Sahaab focuses on premium contemporary staircases with thick open timber treads, structural steel supports and clear glass balustrades. Supported layouts are straight, L-shaped, U-shaped and cantilevered/floating.
+## Add your staircase images
 
-## No AI services
+Add image files under `src/assets/stairs`. The folder names are the image metadata, so no database entry or code change is needed when adding another image.
 
-There is no AI Gateway, image-generation provider, image editing, AI model, AI credential, or AI-generated 3D feature. Matching is a deterministic metadata-scoring process over existing photographs. The result is an existing reference image, not a generated or modified image.
+Use this exact folder structure:
 
-Reference photographs are sourced from Wikimedia Commons. Each result links to its original file page and displays attribution and license information.
+```text
+src/assets/stairs/
+  <layout>/
+    <wood-colour>/
+      <glass-option>/
+        <steel-finish>/
+          <support-style>/
+            <number-of-steps>-steps/
+              your-image.webp
+```
+
+Supported folder names:
+
+| Attribute | Folder names |
+|---|---|
+| Layout | `straight`, `l-shaped`, `u-shaped`, `spiral`, `cantilevered` |
+| Wood colour | `light-oak`, `natural-oak`, `walnut`, `dark-walnut` |
+| Side glass | `with-glass`, `without-glass` |
+| Steel finish | `matte-black`, `anthracite`, `brushed-steel` |
+| Support style | `central-spine`, `side-stringer`, `cantilevered` |
+| Step count | A folder such as `15-steps` (also accepts `15`) |
+
+Example:
+
+```text
+src/assets/stairs/spiral/walnut/with-glass/matte-black/central-spine/15-steps/spiral-walnut-01.webp
+src/assets/stairs/straight/natural-oak/without-glass/anthracite/side-stringer/14-steps/straight-oak-02.jpg
+```
+
+You can put multiple images in the same final folder. The app will randomly choose between equally suitable images. Supported formats are AVIF, GIF, JPEG, PNG and WebP. Prefer WebP or AVIF for smaller production bundles.
+
+**Important:** Add files inside `src/assets/stairs`, not `public`. Vite discovers and bundles these assets at build time. Restart the dev server after adding new folders or images so the catalog is refreshed.
+
+## How matching works
+
+- The selected layout is a hard requirement; a spiral request can never return a straight staircase.
+- Wood colour match: 30 points.
+- Side glass match: 25 points.
+- Steel finish match: 20 points.
+- Support style match: 15 points.
+- Step count: up to 10 points, decreasing for each step of difference.
+- The engine randomly selects among candidates tied for the highest score.
+- If no image exists for a layout, the UI explains which folder needs images.
+
+The selected reference image never changes the customer's actual dimensions, structural configuration or quotation calculations. It is a visual reference only.
+
+## No external image or AI services
+
+The image catalog is bundled with the application. Matching and random selection run locally in the browser. No Wikimedia search, image-generation provider, AI model, external image API or provider API key is required.
 
 ## Development
 
@@ -30,5 +78,3 @@ cd stairsprov2
 npm install
 npm run dev
 ```
-
-The app does not require AI provider keys or a room-image upload.
