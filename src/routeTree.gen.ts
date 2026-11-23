@@ -6,30 +6,27 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiInspirationRouteImport } from './routes/api/inspiration'
 
 const IndexRoute = IndexRouteImport.update({ id: '/', path: '/', getParentRoute: () => rootRouteImport } as any)
-const ApiInspirationRoute = ApiInspirationRouteImport.update({ id: '/api/inspiration', path: '/api/inspiration', getParentRoute: () => rootRouteImport } as any)
 
-export interface FileRoutesByFullPath { '/': typeof IndexRoute; '/api/inspiration': typeof ApiInspirationRoute }
-export interface FileRoutesByTo { '/': typeof IndexRoute; '/api/inspiration': typeof ApiInspirationRoute }
-export interface FileRoutesById { __root__: typeof rootRouteImport; '/': typeof IndexRoute; '/api/inspiration': typeof ApiInspirationRoute }
+export interface FileRoutesByFullPath { '/': typeof IndexRoute }
+export interface FileRoutesByTo { '/': typeof IndexRoute }
+export interface FileRoutesById { __root__: typeof rootRouteImport; '/': typeof IndexRoute }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/inspiration'
+  fullPaths: '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/inspiration'
-  id: '__root__' | '/' | '/api/inspiration'
+  to: '/'
+  id: '__root__' | '/'
   fileRoutesById: FileRoutesById
 }
-export interface RootRouteChildren { IndexRoute: typeof IndexRoute; ApiInspirationRoute: typeof ApiInspirationRoute }
+export interface RootRouteChildren { IndexRoute: typeof IndexRoute }
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/': { id: '/'; path: '/'; fullPath: '/'; preLoaderRoute: typeof IndexRouteImport; parentRoute: typeof rootRouteImport }
-    '/api/inspiration': { id: '/api/inspiration'; path: '/api/inspiration'; fullPath: '/api/inspiration'; preLoaderRoute: typeof ApiInspirationRouteImport; parentRoute: typeof rootRouteImport }
   }
 }
-const rootRouteChildren: RootRouteChildren = { IndexRoute, ApiInspirationRoute }
+const rootRouteChildren: RootRouteChildren = { IndexRoute }
 export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
