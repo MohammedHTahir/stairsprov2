@@ -301,7 +301,46 @@ export const REMOTE_STAIRCASE_IMAGES: StaircaseImage[] = [
     openRiser: true,
     glassRailing: true,
   },
-]; 
+  {
+    id: "u-houzz-tindalls-oak-glass-04",
+    title: "U-shaped floating oak staircase with glass balustrade",
+    imageUrl: "https://st.hzcdn.com/simgs/98b1945c020ef3a7_9-0071/home-design.jpg",
+    sourceUrl: "https://www.houzz.co.uk/photos/tindalls-road-modern-staircase-auckland-phvw-vp~183919285",
+    layout: "u-shaped",
+    style: "mono-stringer",
+    wood: "natural-oak",
+    metal: "matte-black",
+    entryDirection: "right",
+    openRiser: true,
+    glassRailing: true,
+  },
+  {
+    id: "u-madeinchina-oak-glass-05",
+    title: "U-shaped floating oak staircase with glass railing",
+    imageUrl: "https://image.made-in-china.com/2f0j00yHZCbgmwwfqV/Modern-Prefabricated-U-Shaped-Indoor-Oak-Staircase-with-Glass-Railing.webp",
+    sourceUrl: "https://stairshousebuilding.en.made-in-china.com/product/dAXYUtWVAshM/China-Modern-Prefabricated-U-Shaped-Indoor-Oak-Staircase-with-Glass-Railing.html",
+    layout: "u-shaped",
+    style: "floating",
+    wood: "natural-oak",
+    metal: "brushed-steel",
+    entryDirection: "left",
+    openRiser: true,
+    glassRailing: true,
+  },
+  {
+    id: "spiral-idei-club-dark-oak-glass-06",
+    title: "Contemporary spiral staircase with timber treads and glass balustrade",
+    imageUrl: "https://idei.club/raznoe/uploads/posts/2022-12/1671655125_idei-club-p-poruchen-dlya-vintovoi-lestnitsi-iz-metall-80.jpg",
+    sourceUrl: "https://idei.club/raznoe/12113-poruchen-dlja-vintovoj-lestnicy-iz-metalla.html",
+    layout: "spiral",
+    style: "mono-stringer",
+    wood: "dark-walnut",
+    metal: "matte-black",
+    entryDirection: "not-applicable",
+    openRiser: true,
+    glassRailing: true,
+  }
+];
 
 const imageModules = import.meta.glob('/src/assets/stairs/**/*.{avif,gif,jpeg,jpg,png,webp}', {
   eager: true,
