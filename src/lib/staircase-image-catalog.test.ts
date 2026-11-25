@@ -9,18 +9,19 @@ import {
 const config: StaircaseConfiguration = {
   layout: 'straight',
   wood: 'natural-oak',
-  glass: 'with-glass',
   metal: 'matte-black',
-  support: 'central-spine',
   stepCount: 15,
 };
 
 function image(overrides: Partial<StaircaseImage> = {}): StaircaseImage {
   return {
-    id: 'straight/natural-oak/with-glass/matte-black/central-spine/15-steps/a.webp',
+    id: 'straight/natural-oak/matte-black/15-steps/a.webp',
     title: 'A',
-    imageUrl: '/a.webp',
+    imageUrl: 'https://cdn.example.com/a.webp',
+    sourceUrl: 'https://example.com/a',
     ...config,
+    openRiser: true,
+    glassRailing: true,
     ...overrides,
   };
 }
@@ -28,22 +29,26 @@ function image(overrides: Partial<StaircaseImage> = {}): StaircaseImage {
 describe('staircase image path metadata', () => {
   it('reads configuration from the documented folder structure', () => {
     const result = parseStaircaseImagePath(
-      '/src/assets/stairs/spiral/walnut/without-glass/anthracite/side-stringer/16-steps/spiral-01.webp',
+      '/src/assets/stairs/spiral/walnut/anthracite/16-steps/spiral-01.webp',
       '/assets/spiral-01.webp',
     );
     expect(result).toMatchObject({
       layout: 'spiral',
       wood: 'walnut',
-      glass: 'without-glass',
       metal: 'anthracite',
-      support: 'side-stringer',
       stepCount: 16,
       title: 'Spiral 01',
+      openRiser: true,
+      glassRailing: true,
     });
   });
 
   it('ignores assets that do not follow the supported folder convention', () => {
     expect(parseStaircaseImagePath('/src/assets/stairs/straight/random.webp', '/random.webp')).toBeNull();
+  });
+
+  it('rejects unsupported layouts', () => {
+    expect(parseStaircaseImagePath('/src/assets/stairs/cantilevered/walnut/matte-black/15-steps/a.webp', '/a.webp')).toBeNull();
   });
 });
 
@@ -60,9 +65,9 @@ describe('staircase image matching', () => {
     expect(selectStaircaseImage(config, [spiral])).toBeNull();
   });
 
-  it('falls back to the closest matching configuration within the same layout', () => {
+  it('falls back to the closest finish and step count within the same layout', () => {
     const close = image({ id: 'close.webp', stepCount: 16 });
-    const poor = image({ id: 'poor.webp', wood: 'dark-walnut', glass: 'without-glass', metal: 'brushed-steel', support: 'side-stringer', stepCount: 20 });
+    const poor = image({ id: 'poor.webp', wood: 'dark-walnut', metal: 'brushed-steel', stepCount: 20 });
     expect(selectStaircaseImage(config, [poor, close])?.image).toBe(close);
     expect(selectStaircaseImage(config, [close])?.exact).toBe(false);
   });
@@ -72,5 +77,11 @@ describe('staircase image matching', () => {
     const second = image({ id: 'second.webp' });
     expect(selectStaircaseImage(config, [first, second], () => 0)?.image).toBe(first);
     expect(selectStaircaseImage(config, [first, second], () => 0.99)?.image).toBe(second);
+  });
+
+  it('does not display records that fail either fixed design requirement', () => {
+    const closed = image({ openRiser: false as true });
+    const noGlass = image({ glassRailing: false as true });
+    expect(selectStaircaseImage(config, [closed, noGlass])).toBeNull();
   });
 });
