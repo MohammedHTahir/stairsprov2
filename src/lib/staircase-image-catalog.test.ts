@@ -80,8 +80,8 @@ describe('staircase image matching', () => {
   });
 
   it('does not display records that fail either fixed design requirement', () => {
-    const closed = image({ openRiser: false as true });
-    const noGlass = image({ glassRailing: false as true });
+    const closed = image({ openRiser: false as unknown as true });
+    const noGlass = image({ glassRailing: false as unknown as true });
     expect(selectStaircaseImage(config, [closed, noGlass])).toBeNull();
   });
 });
