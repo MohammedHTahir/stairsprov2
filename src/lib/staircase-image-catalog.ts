@@ -1,15 +1,11 @@
-export type StairLayout = 'straight' | 'l-shaped' | 'u-shaped' | 'spiral' | 'cantilevered';
+export type StairLayout = 'straight' | 'l-shaped' | 'u-shaped' | 'spiral';
 export type WoodFinish = 'light-oak' | 'natural-oak' | 'walnut' | 'dark-walnut';
-export type GlassOption = 'with-glass' | 'without-glass';
 export type MetalFinish = 'matte-black' | 'anthracite' | 'brushed-steel';
-export type SupportStyle = 'central-spine' | 'side-stringer' | 'cantilevered';
 
 export type StaircaseConfiguration = {
   layout: StairLayout;
   wood: WoodFinish;
-  glass: GlassOption;
   metal: MetalFinish;
-  support: SupportStyle;
   stepCount: number;
 };
 
@@ -17,6 +13,11 @@ export type StaircaseImage = StaircaseConfiguration & {
   id: string;
   title: string;
   imageUrl: string;
+  sourceUrl: string;
+  /** Every library entry must be checked as an open-riser staircase. */
+  openRiser: true;
+  /** Every library entry must have a glass balustrade/railing. */
+  glassRailing: true;
 };
 
 export type StaircaseImageMatch = {
@@ -25,25 +26,47 @@ export type StaircaseImageMatch = {
   exact: boolean;
 };
 
+/**
+ * External image URLs are rendered directly by the browser. No image binaries
+ * are downloaded, copied into the repository, or bundled into the app.
+ *
+ * Only add a record after checking the source image itself for BOTH open
+ * risers (visible gaps between treads) and a glass railing. Keep the source
+ * page URL for attribution and provenance.
+ */
+export const REMOTE_STAIRCASE_IMAGES: StaircaseImage[] = [
+  {
+    id: 'spiral-uk-barrage-road-001',
+    title: 'Barrage Road spiral — oak treads and glass balustrade',
+    imageUrl: 'https://www.spiral.uk.com/wp-content/uploads/bis-images/1216/barrage-road-spiral-stairs-007-portrait-250x375-f50_50.jpg',
+    sourceUrl: 'https://www.spiral.uk.com/case-studies/interior-steel-spiral-staircase-with-oak-treads-and-glass-balustrade/',
+    layout: 'spiral',
+    wood: 'natural-oak',
+    metal: 'anthracite',
+    stepCount: 12,
+    openRiser: true,
+    glassRailing: true,
+  },
+];
+
 const imageModules = import.meta.glob('/src/assets/stairs/**/*.{avif,gif,jpeg,jpg,png,webp}', {
   eager: true,
   query: '?url',
   import: 'default',
 }) as Record<string, string>;
 
-const layouts = new Set<StairLayout>(['straight', 'l-shaped', 'u-shaped', 'spiral', 'cantilevered']);
+const layouts = new Set<StairLayout>(['straight', 'l-shaped', 'u-shaped', 'spiral']);
 const woods = new Set<WoodFinish>(['light-oak', 'natural-oak', 'walnut', 'dark-walnut']);
-const glassOptions = new Set<GlassOption>(['with-glass', 'without-glass']);
 const metals = new Set<MetalFinish>(['matte-black', 'anthracite', 'brushed-steel']);
-const supports = new Set<SupportStyle>(['central-spine', 'side-stringer', 'cantilevered']);
 
 function titleFromFilename(filename: string) {
   return filename.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
 }
 
 /**
- * Expected asset path:
- * src/assets/stairs/<layout>/<wood>/<glass>/<metal>/<support>/<step-count>/<image>
+ * Local asset folder convention:
+ * src/assets/stairs/<layout>/<wood>/<metal>/<step-count>/<image>
+ * Local images are also required to be open-riser with glass railing.
  */
 export function parseStaircaseImagePath(path: string, imageUrl: string): StaircaseImage | null {
   const marker = '/stairs/';
@@ -51,16 +74,14 @@ export function parseStaircaseImagePath(path: string, imageUrl: string): Stairca
   if (markerIndex < 0) return null;
 
   const parts = path.slice(markerIndex + marker.length).split('/');
-  if (parts.length !== 7) return null;
+  if (parts.length !== 5) return null;
 
-  const [layout, wood, glass, metal, support, stepFolder, filename] = parts;
+  const [layout, wood, metal, stepFolder, filename] = parts;
   const stepCount = /^(\d+)(?:-steps?)?$/.exec(stepFolder ?? '');
   if (
     !layouts.has(layout as StairLayout) ||
     !woods.has(wood as WoodFinish) ||
-    !glassOptions.has(glass as GlassOption) ||
     !metals.has(metal as MetalFinish) ||
-    !supports.has(support as SupportStyle) ||
     !stepCount ||
     !filename
   ) return null;
@@ -69,45 +90,43 @@ export function parseStaircaseImagePath(path: string, imageUrl: string): Stairca
     id: parts.join('/'),
     title: titleFromFilename(filename),
     imageUrl,
+    sourceUrl: '',
     layout: layout as StairLayout,
     wood: wood as WoodFinish,
-    glass: glass as GlassOption,
     metal: metal as MetalFinish,
-    support: support as SupportStyle,
     stepCount: Number(stepCount[1]),
+    openRiser: true,
+    glassRailing: true,
   };
 }
 
-export const STAIRCASE_IMAGE_CATALOG: StaircaseImage[] = Object.entries(imageModules)
+const localStaircaseImages = Object.entries(imageModules)
   .map(([path, imageUrl]) => parseStaircaseImagePath(path, imageUrl))
   .filter((image): image is StaircaseImage => image !== null);
 
+export const STAIRCASE_IMAGE_CATALOG: StaircaseImage[] = [
+  ...REMOTE_STAIRCASE_IMAGES,
+  ...localStaircaseImages,
+];
+
 export function scoreStaircaseImage(image: StaircaseImage, config: StaircaseConfiguration) {
   if (image.layout !== config.layout) return -1;
+  if (!image.openRiser || !image.glassRailing) return -1;
 
   let score = 0;
-  if (image.wood === config.wood) score += 30;
-  if (image.glass === config.glass) score += 25;
-  if (image.metal === config.metal) score += 20;
-  if (image.support === config.support) score += 15;
-
-  // Exact step counts receive all 10 points. Nearby counts remain eligible,
-  // but lose two points for every additional step of difference.
-  score += Math.max(0, 10 - Math.abs(image.stepCount - config.stepCount) * 2);
+  if (image.wood === config.wood) score += 40;
+  if (image.metal === config.metal) score += 30;
+  score += Math.max(0, 30 - Math.abs(image.stepCount - config.stepCount) * 3);
   return score;
 }
 
-/**
- * Finds the best-scoring image within the requested layout, then randomly
- * chooses among equally good candidates. The random function is injectable
- * so selection behavior can be tested without flaky tests.
- */
 export function selectStaircaseImage(
   config: StaircaseConfiguration,
   catalog: readonly StaircaseImage[] = STAIRCASE_IMAGE_CATALOG,
   random: () => number = Math.random,
 ): StaircaseImageMatch | null {
   const ranked = catalog
+    .filter(image => image.openRiser && image.glassRailing)
     .map(image => ({ image, score: scoreStaircaseImage(image, config) }))
     .filter(candidate => candidate.score >= 0);
 
@@ -121,9 +140,7 @@ export function selectStaircaseImage(
   return {
     ...selected,
     exact: selected.image.wood === config.wood
-      && selected.image.glass === config.glass
       && selected.image.metal === config.metal
-      && selected.image.support === config.support
       && selected.image.stepCount === config.stepCount,
   };
 }
