@@ -1,80 +1,74 @@
 # Sahaab Stair Studio
 
-A configuration-driven staircase design finder built with TanStack Start, React and TypeScript. The app selects existing staircase images from a local, curated asset library. It does not generate or edit images.
+A configuration-driven staircase design finder built with TanStack Start, React and TypeScript. The app displays curated existing staircase images from remote image URLs and optional local assets. It does not generate or edit images.
 
-## Customer workflow
+## Fixed design requirements
 
-1. Choose the staircase layout: straight, L-shaped, U-shaped, spiral or cantilevered.
-2. Choose the timber colour, side glass panels, steel finish, support style and number of steps.
-3. Select **Find my staircase**.
-4. Sahaab searches the local image catalog, scores candidates against the configuration and randomly selects one of the best matches.
-5. Select **Show another design** to see another equally suitable image.
+Every image in the selection catalog must satisfy BOTH requirements:
+- **Open risers:** visible gaps between each tread; no closed risers or solid infill between steps.
+- **Glass railing:** a glass balustrade/guardrail must be visible.
 
-The selector never substitutes a different staircase layout. If the exact combination is unavailable, it finds the closest available finish and step-count match within the selected layout.
+Supported layouts are exactly:
+- `straight`
+- `l-shaped`
+- `u-shaped`
+- `spiral`
 
-## Add your staircase images
+There is no option to disable the glass railing or select closed risers. Do not add other staircase layouts.
 
-Add image files under `src/assets/stairs`. The folder names are the image metadata, so no database entry or code change is needed when adding another image.
+## Remote image library (recommended)
 
-Use this exact folder structure:
+Remote image URLs are rendered directly in the browser. The app does not download, copy, bundle, or proxy the image files, so they do not increase the Git repository size.
 
-```text
-src/assets/stairs/
-  <layout>/
-    <wood-colour>/
-      <glass-option>/
-        <steel-finish>/
-          <support-style>/
-            <number-of-steps>-steps/
-              your-image.webp
+Add records to `REMOTE_STAIRCASE_IMAGES` in `src/lib/staircase-image-catalog.ts`:
+
+```ts
+{
+  id: 'unique-image-id',
+  title: 'Short descriptive title',
+  imageUrl: 'https://image-host.example/path/to/image.jpg',
+  sourceUrl: 'https://original-photo-page.example/',
+  layout: 'straight',
+  wood: 'natural-oak',
+  metal: 'matte-black',
+  stepCount: 15,
+  openRiser: true,
+  glassRailing: true,
+}
 ```
 
-Supported folder names:
+Only add an image after checking the actual photograph for open gaps between the treads and a glass railing. The `openRiser` and `glassRailing` flags are an editorial verification record, not automatic computer vision. Keep the original source page URL for attribution and provenance. Prefer providers whose terms permit embedding/hotlinking; a free-download license does not automatically guarantee every form of remote embedding is allowed.
 
-| Attribute | Folder names |
-|---|---|
-| Layout | `straight`, `l-shaped`, `u-shaped`, `spiral`, `cantilevered` |
-| Wood colour | `light-oak`, `natural-oak`, `walnut`, `dark-walnut` |
-| Side glass | `with-glass`, `without-glass` |
-| Steel finish | `matte-black`, `anthracite`, `brushed-steel` |
-| Support style | `central-spine`, `side-stringer`, `cantilevered` |
-| Step count | A folder such as `15-steps` (also accepts `15`) |
+### Remote image trade-offs
 
-Example:
+- No image storage in Git or Supabase.
+- Browser visitors load images from the third-party host, using their bandwidth.
+- The original host can change URLs, block hotlinking, resize images, or remove them.
+- The app needs an internet connection to display remote images.
+- For production reliability, use a licensed image CDN or storage bucket if a source prohibits hotlinking.
+
+## Optional local images
+
+Local images can still be added under:
 
 ```text
-src/assets/stairs/spiral/walnut/with-glass/matte-black/central-spine/15-steps/spiral-walnut-01.webp
-src/assets/stairs/straight/natural-oak/without-glass/anthracite/side-stringer/14-steps/straight-oak-02.jpg
+src/assets/stairs/<layout>/<wood>/<metal>/<step-count>/<image>
 ```
 
-You can put multiple images in the same final folder. The app will randomly choose between equally suitable images. Supported formats are AVIF, GIF, JPEG, PNG and WebP. Prefer WebP or AVIF for smaller production bundles.
+Use the same four layout names, supported wood and metal values, and numeric step folders such as `15-steps`. Local images must also be open-riser with glass railing. Add only verified images and restart Vite after adding files.
 
-**Important:** Add files inside `src/assets/stairs`, not `public`. Vite discovers and bundles these assets at build time. Restart the dev server after adding new folders or images so the catalog is refreshed.
+## Matching
 
-## How matching works
-
-- The selected layout is a hard requirement; a spiral request can never return a straight staircase.
-- Wood colour match: 30 points.
-- Side glass match: 25 points.
-- Steel finish match: 20 points.
-- Support style match: 15 points.
-- Step count: up to 10 points, decreasing for each step of difference.
-- The engine randomly selects among candidates tied for the highest score.
-- If no image exists for a layout, the UI explains which folder needs images.
-
-The selected reference image never changes the customer's actual dimensions, structural configuration or quotation calculations. It is a visual reference only.
-
-## No external image or AI services
-
-The image catalog is bundled with the application. Matching and random selection run locally in the browser. No Wikimedia search, image-generation provider, AI model, external image API or provider API key is required.
+- The selected layout is a hard requirement.
+- Wood finish and metal finish are scored preferences.
+- Step count is scored by proximity.
+- Random selection occurs among candidates with the highest score.
+- No match is returned if the chosen layout has no verified images.
+- The selected image never changes the customer's dimensions, engineering configuration or quotation calculations.
 
 ## Development
 
-Requires Node.js.
-
 ```sh
-git clone https://github.com/MohammedHTahir/stairsprov2.git
-cd stairsprov2
 npm install
 npm run dev
 ```
