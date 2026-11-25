@@ -381,6 +381,32 @@ export const REMOTE_STAIRCASE_IMAGES: StaircaseImage[] = [
     glassRailing: true,
   },
 
+  {
+    id: "u-pinterest-dark-oak-glass-07",
+    title: "U-shaped dark timber open-riser staircase with glass railing",
+    imageUrl: "https://i.pinimg.com/originals/f7/8b/99/f78b99619f9f096d86aaa2cba1f01bbb.png",
+    sourceUrl: "https://www.pinterest.com/pin/u-shaped-straight-staircase-indoor-metal-stair-railing-with-post-glass-railing--852165560724484214/",
+    layout: "u-shaped",
+    style: "double-stringer",
+    wood: "dark-walnut",
+    metal: "matte-black",
+    entryDirection: "right",
+    openRiser: true,
+    glassRailing: true,
+  },
+  {
+    id: "l-design-fabrications-central-spine-07",
+    title: "L-shaped central spine oak staircase with frameless glass",
+    imageUrl: "https://cdn.shopify.com/s/files/1/0789/4135/6310/files/Fully_fabricated_central_spine_metal_staircase_with_Oak_treads.jpg?v=1752508477",
+    sourceUrl: "https://designfabrications.co.uk/blogs/project-focus/central-spine-staircase-with-wrap-around-treads-and-frameless-glass-balustrade-saffron-walden-essex",
+    layout: "l-shaped",
+    style: "central-spine",
+    wood: "walnut",
+    metal: "matte-black",
+    entryDirection: "right",
+    openRiser: true,
+    glassRailing: true,
+  }
 ];
 
 const imageModules = import.meta.glob('/src/assets/stairs/**/*.{avif,gif,jpeg,jpg,png,webp}', {
