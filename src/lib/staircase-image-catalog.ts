@@ -394,19 +394,7 @@ export const REMOTE_STAIRCASE_IMAGES: StaircaseImage[] = [
     openRiser: true,
     glassRailing: true,
   },
-  {
-    id: "l-design-fabrications-central-spine-07",
-    title: "L-shaped central spine oak staircase with frameless glass",
-    imageUrl: "https://cdn.shopify.com/s/files/1/0789/4135/6310/files/Fully_fabricated_central_spine_metal_staircase_with_Oak_treads.jpg?v=1752508477",
-    sourceUrl: "https://designfabrications.co.uk/blogs/project-focus/central-spine-staircase-with-wrap-around-treads-and-frameless-glass-balustrade-saffron-walden-essex",
-    layout: "l-shaped",
-    style: "central-spine",
-    wood: "walnut",
-    metal: "matte-black",
-    entryDirection: "right",
-    openRiser: true,
-    glassRailing: true,
-  }
+
 ];
 
 const imageModules = import.meta.glob('/src/assets/stairs/**/*.{avif,gif,jpeg,jpg,png,webp}', {
