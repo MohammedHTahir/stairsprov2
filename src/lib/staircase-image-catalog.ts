@@ -88,11 +88,9 @@ export function parseStaircaseImagePath(path: string, imageUrl: string): Stairca
   const markerIndex = path.lastIndexOf(marker);
   if (markerIndex < 0) return null;
   const parts = path.slice(markerIndex + marker.length).split('/');
-  if (parts.length !== 6) return null;
+  if (parts.length !== 7) return null;
 
   const [layout, wood, metal, style, entryDirection, stepFolder, filename] = parts;
-  // Six folders plus filename are required.
-  if (parts.length !== 7) return null;
   const stepCount = /^(\d+)(?:-steps?)?$/.exec(stepFolder ?? '');
   if (
     !layouts.has(layout as StairLayout) ||
