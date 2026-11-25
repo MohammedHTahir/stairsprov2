@@ -366,19 +366,7 @@ export const REMOTE_STAIRCASE_IMAGES: StaircaseImage[] = [
     openRiser: true,
     glassRailing: true,
   },
-  {
-    id: "l-alibaba-open-riser-glass-05",
-    title: "L-shaped open-riser staircase with black mono-stringer and glass",
-    imageUrl: "https://s.alicdn.com/%40sc04/kf/H1754b7cafa8f4bc3aa981140ba51dede4/Open-Riser-Staircase-Design-L-Shaped-Straight-Mono-Stringer-Stairs-for-Indoor-Apartment.jpg",
-    sourceUrl: "https://www.alibaba.com/showroom/l-shaped-deck-stairs.html",
-    layout: "l-shaped",
-    style: "mono-stringer",
-    wood: "light-oak",
-    metal: "matte-black",
-    entryDirection: "right",
-    openRiser: true,
-    glassRailing: true,
-  },
+
   {
     id: "l-madeinchina-black-steel-oak-glass-06",
     title: "L-shaped floating oak staircase with glass panels and black steel",
@@ -392,19 +380,7 @@ export const REMOTE_STAIRCASE_IMAGES: StaircaseImage[] = [
     openRiser: true,
     glassRailing: true,
   },
-  {
-    id: "u-houzz-tindalls-oak-glass-06",
-    title: "U-shaped floating oak staircase with glass balustrade",
-    imageUrl: "https://st.hzcdn.com/simgs/98b1945c020ef3a7_9-0071/home-design.jpg",
-    sourceUrl: "https://www.houzz.co.uk/photos/tindalls-road-modern-staircase-auckland-phvw-vp~183919285",
-    layout: "u-shaped",
-    style: "mono-stringer",
-    wood: "natural-oak",
-    metal: "matte-black",
-    entryDirection: "right",
-    openRiser: true,
-    glassRailing: true,
-  }
+
 ];
 
 const imageModules = import.meta.glob('/src/assets/stairs/**/*.{avif,gif,jpeg,jpg,png,webp}', {
