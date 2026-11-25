@@ -1,70 +1,63 @@
 # Sahaab Stair Studio
 
-A configuration-driven staircase design finder built with TanStack Start, React and TypeScript. The app displays curated existing staircase images from remote image URLs and optional local assets. It does not generate or edit images.
+Configuration-driven staircase reference finder. Images are existing external photographs displayed by URL; the app does not generate images or store remote image binaries.
 
-## Fixed design requirements
+## Fixed visual requirements
 
-Every image in the selection catalog must satisfy BOTH requirements:
-- **Open risers:** visible gaps between each tread; no closed risers or solid infill between steps.
-- **Glass railing:** a glass balustrade/guardrail must be visible.
+Every selected reference must have:
+- One of exactly four layouts: `straight`, `l-shaped`, `u-shaped`, `spiral`.
+- Open risers with visible gaps between individual treads.
+- Glass railing/balustrade only.
 
-Supported layouts are exactly:
-- `straight`
-- `l-shaped`
-- `u-shaped`
-- `spiral`
+These requirements are mandatory and cannot be disabled in the configurator.
 
-There is no option to disable the glass railing or select closed risers. Do not add other staircase layouts.
+## Configuration dimensions and visual options
 
-## Remote image library (recommended)
+The selector supports:
+- Layout and (where applicable) left/right entry direction.
+- Structural/visual style: floating/cantilevered, mono-stringer, double-stringer, zigzag/folded steel, central spine and side stringer.
+- Timber slab colour: light oak, natural oak, walnut and dark walnut (extendable).
+- Steel finish: matte black, anthracite and brushed steel (extendable).
+- Number of steps.
+- Customer dimensions in millimetres: overall width, total run, total rise, tread depth and tread thickness.
 
-Remote image URLs are rendered directly in the browser. The app does not download, copy, bundle, or proxy the image files, so they do not increase the Git repository size.
+Dimensions are customer engineering inputs. They are never inferred from a reference photo. They are retained in the configuration and must continue to drive CAD/quotation calculations in the main product workflow.
 
-Add records to `REMOTE_STAIRCASE_IMAGES` in `src/lib/staircase-image-catalog.ts`:
+## Remote image catalog
+
+Remote image URLs load directly from the browser and do not consume Git repository or Supabase storage. Add a record to `REMOTE_STAIRCASE_IMAGES` in `src/lib/staircase-image-catalog.ts`:
 
 ```ts
 {
-  id: 'unique-image-id',
+  id: 'unique-id',
   title: 'Short descriptive title',
-  imageUrl: 'https://image-host.example/path/to/image.jpg',
-  sourceUrl: 'https://original-photo-page.example/',
+  imageUrl: 'https://host.example/image.jpg',
+  sourceUrl: 'https://host.example/original-project-page',
   layout: 'straight',
-  wood: 'natural-oak',
+  style: 'mono-stringer',
+  wood: 'walnut',
   metal: 'matte-black',
   stepCount: 15,
+  entryDirection: 'not-applicable',
   openRiser: true,
   glassRailing: true,
 }
 ```
 
-Only add an image after checking the actual photograph for open gaps between the treads and a glass railing. The `openRiser` and `glassRailing` flags are an editorial verification record, not automatic computer vision. Keep the original source page URL for attribution and provenance. Prefer providers whose terms permit embedding/hotlinking; a free-download license does not automatically guarantee every form of remote embedding is allowed.
+Only add a record after checking the actual image for both open risers and glass railing. Keep the source page URL. Confirm the host permits remote embedding; a free-download license alone does not guarantee hotlinking permission.
 
-### Remote image trade-offs
+## Matching behaviour
 
-- No image storage in Git or Supabase.
-- Browser visitors load images from the third-party host, using their bandwidth.
-- The original host can change URLs, block hotlinking, resize images, or remove them.
-- The app needs an internet connection to display remote images.
-- For production reliability, use a licensed image CDN or storage bucket if a source prohibits hotlinking.
+- Layout is a hard constraint: never show a different layout.
+- Open risers and glass railing are hard constraints.
+- Style, timber colour, steel finish, entry direction and step count contribute to match scoring.
+- Dimensions are preserved as configuration inputs; if image metadata has documented dimension ranges, they can contribute to ranking. Missing photo dimensions never disqualify a candidate.
+- Random variation occurs between equally ranked candidates.
+- The image is a visual reference only and must never overwrite dimensions, engineering parameters, CAD geometry or quotation values.
 
-## Optional local images
+## Local image assets (optional)
 
-Local images can still be added under:
-
-```text
-src/assets/stairs/<layout>/<wood>/<metal>/<step-count>/<image>
-```
-
-Use the same four layout names, supported wood and metal values, and numeric step folders such as `15-steps`. Local images must also be open-riser with glass railing. Add only verified images and restart Vite after adding files.
-
-## Matching
-
-- The selected layout is a hard requirement.
-- Wood finish and metal finish are scored preferences.
-- Step count is scored by proximity.
-- Random selection occurs among candidates with the highest score.
-- No match is returned if the chosen layout has no verified images.
-- The selected image never changes the customer's dimensions, engineering configuration or quotation calculations.
+Local images can be added at `src/assets/stairs/<layout>/<wood>/<metal>/<style>/<entry>/<step-count>/<image>`. They must meet the same open-riser and glass railing requirements. Restart Vite after adding assets.
 
 ## Development
 
