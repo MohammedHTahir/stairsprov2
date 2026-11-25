@@ -339,7 +339,7 @@ export const REMOTE_STAIRCASE_IMAGES: StaircaseImage[] = [
     entryDirection: "not-applicable",
     openRiser: true,
     glassRailing: true,
-  }
+  },
   {
     id: "straight-berman-red-oak-glass-08",
     title: "Straight red oak mono-stringer staircase with glass railing",
