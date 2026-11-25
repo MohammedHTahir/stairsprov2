@@ -287,20 +287,21 @@ export const REMOTE_STAIRCASE_IMAGES: StaircaseImage[] = [
     openRiser: true,
     glassRailing: true,
   },
+
   {
-    id: "straight-houzz-offset-cantilever-oak-glass-07",
-    title: "Offset cantilever timber treads with structural glass balustrade",
-    imageUrl: "https://st.hzcdn.com/simgs/9f8127b705b27d53_9-6310/home-design.jpg",
-    sourceUrl: "https://www.houzz.co.uk/photos/two-straight-stairs-with-offset-cantilever-timber-treads-and-glass-balustrade-contemporary-staircase-london-phvw-vp~76834021",
+    id: "straight-ovoms-dark-oak-glass-07",
+    title: "Dark oak floating staircase with frameless glass balustrade",
+    imageUrl: "https://www.ovoms.com/web/image/33898-991dfa44/DSC02155.webp",
+    sourceUrl: "https://www.ovoms.com/floating-stairs-with-led-billy",
     layout: "straight",
     style: "floating",
-    wood: "natural-oak",
-    metal: "brushed-steel",
+    wood: "dark-walnut",
+    metal: "matte-black",
     entryDirection: "not-applicable",
     openRiser: true,
     glassRailing: true,
-  }
-];
+  },
+]; 
 
 const imageModules = import.meta.glob('/src/assets/stairs/**/*.{avif,gif,jpeg,jpg,png,webp}', {
   eager: true,
