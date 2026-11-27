@@ -89,6 +89,19 @@ describe('staircase image matching', () => {
     expect(new Set([initial?.image.id, next?.image.id, nextAgain?.image.id]).size).toBe(3);
   });
 
+  it('rejects unsupported floating and side-supported structures', () => {
+    expect(selectStaircaseImage(config, [image({ style: 'floating' })])).toBeNull();
+    expect(selectStaircaseImage(config, [image({ style: 'double-stringer' })])).toBeNull();
+    expect(selectStaircaseImage(config, [image({ style: 'side-stringer' })])).toBeNull();
+    expect(selectStaircaseImage({ ...config, style: 'floating' }, [image()])).toBeNull();
+  });
+
+  it('never substitutes a different landing count or layout', () => {
+    const oneLanding = image({ landingCount: 1 });
+    const wrongLayout = image({ id: 'l-shaped.webp', layout: 'l-shaped', landingCount: 1 });
+    expect(selectStaircaseImage({ ...config, landingCount: 2 }, [oneLanding, wrongLayout])).toBeNull();
+  });
+
   it('never returns a different staircase layout', () => {
     expect(selectStaircaseImage(config, [image({ layout: 'spiral' })])).toBeNull();
   });
