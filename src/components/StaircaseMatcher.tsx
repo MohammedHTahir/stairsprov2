@@ -21,12 +21,8 @@ const options = {
     { value: 'spiral', label: 'Spiral' },
   ],
   style: [
-    { value: 'floating', label: 'Floating / cantilevered' },
-    { value: 'mono-stringer', label: 'Mono-stringer' },
-    { value: 'double-stringer', label: 'Double stringer' },
-    { value: 'zigzag', label: 'Zigzag / folded steel' },
+    { value: 'mono-stringer', label: 'Central steel support base' },
     { value: 'central-spine', label: 'Central steel spine' },
-    { value: 'side-stringer', label: 'Side steel stringer' },
   ],
   wood: [
     { value: 'light-oak', label: 'Light oak' },
@@ -107,7 +103,7 @@ export function StaircaseMatcher() {
     setSearched(true);
     const selected = selectStaircaseImage(configuration, STAIRCASE_IMAGE_CATALOG, Math.random, match?.image.id);
     setMatch(selected);
-    if (!selected) setError(`No verified open-riser ${configuration.layout} staircase with glass railing${configuration.layout === 'straight' ? ` and ${configuration.landingCount ?? 0} intermediate landing(s)` : ''} is in the image library yet.`);
+    if (!selected) setError(`No verified ${configuration.layout} reference with ${configuration.layout === 'straight' ? `${configuration.landingCount ?? 0} intermediate landing(s), ` : ''}central steel support, open risers and glass railing is available yet. We will not substitute another layout or support construction.`);
   }
 
   const imageCount = STAIRCASE_IMAGE_CATALOG.length;
@@ -124,7 +120,7 @@ export function StaircaseMatcher() {
       <section>
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Staircase finder</p>
         <h1 className="font-display text-4xl leading-tight tracking-tight sm:text-5xl">Find your staircase.</h1>
-        <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">Configure the staircase style, finishes and dimensions. The image is a visual reference; your dimensions remain the source of truth for the quotation.</p>
+        <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">Configure the layout, central steel support, finishes and dimensions. Sahaab does not offer wall-mounted floating or side-supported stairs. The image is a visual reference; your dimensions remain the source of truth for the quotation.</p>
         <div className="mt-8 space-y-5 rounded-2xl border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold"><SlidersHorizontal className="size-4" /> Your configuration</div>
           <SelectField label="Staircase layout" value={configuration.layout} values={options.layout} onChange={value => { update('layout', value as StairLayout); if (value !== 'straight') update('landingCount', 0); }} />
@@ -141,7 +137,7 @@ export function StaircaseMatcher() {
             <DimensionField label="Tread depth" value={configuration.treadDepthMm ?? 280} onChange={value => update('treadDepthMm', value)} />
             <DimensionField label="Tread thickness" value={configuration.treadThicknessMm ?? 40} onChange={value => update('treadThicknessMm', value)} />
           </div>
-          <div className="rounded-lg bg-muted/60 p-3 text-xs leading-5 text-muted-foreground">All results must have open risers and glass railings. The selector also considers style, timber colour, steel finish, entry direction and step count. Dimensions are retained as customer specifications and are never guessed from a photo.</div>
+          <div className="rounded-lg bg-muted/60 p-3 text-xs leading-5 text-muted-foreground">Only central steel support-base / central-spine construction is supported. Floating/cantilevered, side-stringer, double-stringer and zig-zag structures are excluded. Every result must match the selected layout and landing count, and must show open risers and glass railings. Dimensions are retained as customer specifications and are never guessed from a photo.</div>
           <Button className="h-12 w-full" onClick={findMatch}>
             {match ? <><Shuffle className="size-4" /> Show another design</> : <><Search className="size-4" /> Find my staircase</>}
           </Button>
@@ -165,7 +161,7 @@ export function StaircaseMatcher() {
                 <span className="rounded-full bg-muted px-2.5 py-1">Open risers</span>
                 <span className="rounded-full bg-muted px-2.5 py-1">Glass railing</span>
               </div>
-              {!match.exact && <p className="text-xs leading-5 text-muted-foreground">An exact style/finish/step combination is not in the library yet. This is the closest available image for your selected layout.</p>}
+              {!match.exact && <p className="text-xs leading-5 text-muted-foreground">An exact finish/step combination is not in the library yet. This is the closest eligible image for your selected layout and central steel support construction.</p>}
               <a href={match.image.sourceUrl || match.image.imageUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary underline">View original image source <ExternalLink className="size-3" /></a>
               <p className="border-t pt-3 text-xs leading-5 text-muted-foreground">This photograph is a visual reference only. Your entered dimensions remain authoritative for engineering and quotation calculations.</p>
             </div>
