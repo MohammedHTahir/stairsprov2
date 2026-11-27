@@ -43,7 +43,6 @@ const options = {
   landings: [
     { value: '0', label: 'No landing' },
     { value: '1', label: '1 landing' },
-    { value: '2', label: '2 landings' },
   ],
   steps: Array.from({ length: 11 }, (_, index) => {
     const value = index + 10;
@@ -124,7 +123,7 @@ export function StaircaseMatcher() {
         <div className="mt-8 space-y-5 rounded-2xl border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold"><SlidersHorizontal className="size-4" /> Your configuration</div>
           <SelectField label="Staircase layout" value={configuration.layout} values={options.layout} onChange={value => { update('layout', value as StairLayout); if (value !== 'straight') update('landingCount', 0); }} />
-          {configuration.layout === 'straight' && <SelectField label="Choose landing" value={String(configuration.landingCount ?? 0)} values={options.landings} onChange={value => update('landingCount', Number(value) as 0 | 1 | 2)} />}
+          {configuration.layout === 'straight' && <SelectField label="Choose landing" value={String(configuration.landingCount ?? 0)} values={options.landings} onChange={value => update('landingCount', Number(value) as 0 | 1)} />}
           <SelectField label="Structural / visual style" value={configuration.style} values={options.style} onChange={value => update('style', value as StairStyle)} />
           <SelectField label="Timber slab colour" value={configuration.wood} values={options.wood} onChange={value => update('wood', value as WoodFinish)} />
           <SelectField label="Steel finish" value={configuration.metal} values={options.metal} onChange={value => update('metal', value as MetalFinish)} />
