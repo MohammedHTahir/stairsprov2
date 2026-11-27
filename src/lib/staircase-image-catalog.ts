@@ -7,7 +7,7 @@ export type EntryDirection = 'left' | 'right' | 'not-applicable';
 export type StaircaseConfiguration = {
   layout: StairLayout;
   /** Number of intermediate platforms; used only for straight flights. */
-  landingCount?: 0 | 1 | 2;
+  landingCount?: 0 | 1;
   style: StairStyle;
   wood: WoodFinish;
   metal: MetalFinish;
@@ -28,7 +28,7 @@ export type StaircaseImage = {
   sourceUrl: string;
   layout: StairLayout;
   /** Number of intermediate platforms; omitted means no intermediate landing. */
-  landingCount?: 0 | 1 | 2;
+  landingCount?: 0 | 1;
   /** Style/finish attributes are descriptive metadata for matching. */
   style: StairStyle;
   wood: WoodFinish;
