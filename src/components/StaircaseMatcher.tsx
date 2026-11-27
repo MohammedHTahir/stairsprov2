@@ -44,6 +44,11 @@ const options = {
     { value: 'right', label: 'Right entry' },
     { value: 'not-applicable', label: 'Not applicable' },
   ],
+  landings: [
+    { value: '0', label: 'No landing' },
+    { value: '1', label: '1 landing' },
+    { value: '2', label: '2 landings' },
+  ],
   steps: Array.from({ length: 11 }, (_, index) => {
     const value = index + 10;
     return { value: String(value), label: `${value} steps` };
@@ -74,6 +79,7 @@ function DimensionField({ label, value, onChange }: { label: string; value: numb
 export function StaircaseMatcher() {
   const [configuration, setConfiguration] = useState<StaircaseConfiguration>({
     layout: 'straight',
+    landingCount: 0,
     style: 'mono-stringer',
     wood: 'natural-oak',
     metal: 'matte-black',
@@ -99,9 +105,9 @@ export function StaircaseMatcher() {
   function findMatch() {
     setError('');
     setSearched(true);
-    const selected = selectStaircaseImage(configuration);
+    const selected = selectStaircaseImage(configuration, STAIRCASE_IMAGE_CATALOG, Math.random, match?.image.id);
     setMatch(selected);
-    if (!selected) setError(`No verified open-riser ${configuration.layout} staircase with glass railing is in the image library yet.`);
+    if (!selected) setError(`No verified open-riser ${configuration.layout} staircase with glass railing${configuration.layout === 'straight' ? ` and ${configuration.landingCount ?? 0} intermediate landing(s)` : ''} is in the image library yet.`);
   }
 
   const imageCount = STAIRCASE_IMAGE_CATALOG.length;
@@ -121,7 +127,8 @@ export function StaircaseMatcher() {
         <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">Configure the staircase style, finishes and dimensions. The image is a visual reference; your dimensions remain the source of truth for the quotation.</p>
         <div className="mt-8 space-y-5 rounded-2xl border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold"><SlidersHorizontal className="size-4" /> Your configuration</div>
-          <SelectField label="Staircase layout" value={configuration.layout} values={options.layout} onChange={value => update('layout', value as StairLayout)} />
+          <SelectField label="Staircase layout" value={configuration.layout} values={options.layout} onChange={value => { update('layout', value as StairLayout); if (value !== 'straight') update('landingCount', 0); }} />
+          {configuration.layout === 'straight' && <SelectField label="Choose landing" value={String(configuration.landingCount ?? 0)} values={options.landings} onChange={value => update('landingCount', Number(value) as 0 | 1 | 2)} />}
           <SelectField label="Structural / visual style" value={configuration.style} values={options.style} onChange={value => update('style', value as StairStyle)} />
           <SelectField label="Timber slab colour" value={configuration.wood} values={options.wood} onChange={value => update('wood', value as WoodFinish)} />
           <SelectField label="Steel finish" value={configuration.metal} values={options.metal} onChange={value => update('metal', value as MetalFinish)} />
@@ -150,7 +157,7 @@ export function StaircaseMatcher() {
           {match ? <>
             <div className="bg-muted"><img src={match.image.imageUrl} alt={match.image.title} referrerPolicy="no-referrer" className="max-h-[680px] min-h-72 w-full object-contain" /></div>
             <div className="space-y-3 p-5">
-              <div><h3 className="text-lg font-semibold">{match.image.title}</h3><p className="mt-1 text-xs capitalize text-muted-foreground">{match.image.layout} staircase · {match.image.stepCount} steps</p></div>
+              <div><h3 className="text-lg font-semibold">{match.image.title}</h3><p className="mt-1 text-xs capitalize text-muted-foreground">{match.image.layout} staircase · {match.image.stepCount ?? configuration.stepCount} steps{configuration.layout === 'straight' ? ` · ${configuration.landingCount ?? 0} landing${configuration.landingCount === 1 ? '' : 's'}` : ''}</p></div>
               <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <span className="rounded-full bg-muted px-2.5 py-1">{match.image.style}</span>
                 <span className="rounded-full bg-muted px-2.5 py-1">{match.image.wood}</span>
