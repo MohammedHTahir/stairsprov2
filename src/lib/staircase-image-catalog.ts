@@ -1,7 +1,7 @@
 export type StairLayout = 'straight' | 'l-shaped' | 'u-shaped' | 'spiral';
 export type WoodFinish = 'light-oak' | 'natural-oak' | 'walnut' | 'dark-walnut';
 export type MetalFinish = 'matte-black' | 'anthracite' | 'brushed-steel';
-export type StairStyle = 'floating' | 'mono-stringer' | 'double-stringer' | 'zigzag' | 'central-spine' | 'side-stringer';
+export type StairStyle = 'mono-stringer' | 'central-spine';
 export type EntryDirection = 'left' | 'right' | 'not-applicable';
 
 export type StaircaseConfiguration = {
@@ -462,7 +462,7 @@ const imageModules = import.meta.glob('/src/assets/stairs/**/*.{avif,gif,jpeg,jp
 const layouts = new Set<StairLayout>(['straight', 'l-shaped', 'u-shaped', 'spiral']);
 const woods = new Set<WoodFinish>(['light-oak', 'natural-oak', 'walnut', 'dark-walnut']);
 const metals = new Set<MetalFinish>(['matte-black', 'anthracite', 'brushed-steel']);
-const styles = new Set<StairStyle>(['floating', 'mono-stringer', 'double-stringer', 'zigzag', 'central-spine', 'side-stringer']);
+const styles = new Set<StairStyle>(['mono-stringer', 'central-spine']);
 
 function titleFromFilename(filename: string) {
   return filename.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
@@ -515,6 +515,10 @@ export const STAIRCASE_IMAGE_CATALOG: StaircaseImage[] = [
 
 export function scoreStaircaseImage(image: StaircaseImage, config: StaircaseConfiguration) {
   if (image.layout !== config.layout || !image.openRiser || !image.glassRailing) return -1;
+  // Sahaab only supports its central steel support base beneath/behind the treads.
+  // Reject cantilever/floating, side-stringer, twin-stringer and zig-zag structures.
+  if (!['mono-stringer', 'central-spine'].includes(image.style)) return -1;
+  if (!['mono-stringer', 'central-spine'].includes(config.style)) return -1;
   if (config.layout === 'straight' && (image.landingCount ?? 0) !== (config.landingCount ?? 0)) return -1;
 
   let score = 0;
