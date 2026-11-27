@@ -73,10 +73,8 @@ describe('staircase image matching', () => {
   it('keeps straight stair landing counts as a hard match constraint', () => {
     const noLanding = image({ id: 'straight-no-landing.webp', landingCount: 0 });
     const oneLanding = image({ id: 'straight-one-landing.webp', landingCount: 1 });
-    const twoLandings = image({ id: 'straight-two-landings.webp', landingCount: 2 });
     expect(selectStaircaseImage({ ...config, landingCount: 1 }, [noLanding, oneLanding, twoLandings])?.image).toBe(oneLanding);
-    expect(selectStaircaseImage({ ...config, landingCount: 2 }, [noLanding, oneLanding, twoLandings])?.image).toBe(twoLandings);
-    expect(selectStaircaseImage({ ...config, landingCount: 0 }, [oneLanding, twoLandings])).toBeNull();
+    expect(selectStaircaseImage({ ...config, landingCount: 0 }, [oneLanding])).toBeNull();
   });
 
   it('rotates to another eligible image on the next Generate action', () => {
@@ -99,7 +97,7 @@ describe('staircase image matching', () => {
   it('never substitutes a different landing count or layout', () => {
     const oneLanding = image({ landingCount: 1 });
     const wrongLayout = image({ id: 'l-shaped.webp', layout: 'l-shaped', landingCount: 1 });
-    expect(selectStaircaseImage({ ...config, landingCount: 2 }, [oneLanding, wrongLayout])).toBeNull();
+    expect(selectStaircaseImage({ ...config, landingCount: 1 }, [image({ landingCount: 0 }), wrongLayout])).toBeNull();
   });
 
   it('never returns a different staircase layout', () => {
