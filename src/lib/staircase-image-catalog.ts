@@ -572,6 +572,7 @@ export function selectStaircaseImage(
       && selected.image.wood === config.wood
       && selected.image.metal === config.metal
       && selected.image.stepCount === config.stepCount
+      && (config.layout !== 'straight' || (selected.image.landingCount ?? 0) === (config.landingCount ?? 0))
       && (selected.image.entryDirection === config.entryDirection || selected.image.entryDirection === 'not-applicable'),
   };
 }
