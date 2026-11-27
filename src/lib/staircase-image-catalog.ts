@@ -6,6 +6,8 @@ export type EntryDirection = 'left' | 'right' | 'not-applicable';
 
 export type StaircaseConfiguration = {
   layout: StairLayout;
+  /** Number of intermediate platforms; used only for straight flights. */
+  landingCount?: 0 | 1 | 2;
   style: StairStyle;
   wood: WoodFinish;
   metal: MetalFinish;
@@ -25,6 +27,8 @@ export type StaircaseImage = {
   imageUrl: string;
   sourceUrl: string;
   layout: StairLayout;
+  /** Number of intermediate platforms; omitted means no intermediate landing. */
+  landingCount?: 0 | 1 | 2;
   /** Style/finish attributes are descriptive metadata for matching. */
   style: StairStyle;
   wood: WoodFinish;
@@ -511,6 +515,7 @@ export const STAIRCASE_IMAGE_CATALOG: StaircaseImage[] = [
 
 export function scoreStaircaseImage(image: StaircaseImage, config: StaircaseConfiguration) {
   if (image.layout !== config.layout || !image.openRiser || !image.glassRailing) return -1;
+  if (config.layout === 'straight' && (image.landingCount ?? 0) !== (config.landingCount ?? 0)) return -1;
 
   let score = 0;
   if (image.style === config.style) score += 30;
@@ -536,6 +541,7 @@ export function selectStaircaseImage(
   config: StaircaseConfiguration,
   catalog: readonly StaircaseImage[] = STAIRCASE_IMAGE_CATALOG,
   random: () => number = Math.random,
+  previousImageId?: string,
 ): StaircaseImageMatch | null {
   const ranked = catalog
     .filter(image => image.openRiser && image.glassRailing)
@@ -543,10 +549,22 @@ export function selectStaircaseImage(
     .filter(candidate => candidate.score >= 0);
 
   if (ranked.length === 0) return null;
-  const bestScore = Math.max(...ranked.map(candidate => candidate.score));
-  const bestCandidates = ranked.filter(candidate => candidate.score === bestScore);
-  const randomValue = Math.min(0.999999999, Math.max(0, random()));
-  const selected = bestCandidates[Math.floor(randomValue * bestCandidates.length)]!;
+  // Start with the strongest matches, then rotate through the remaining
+  // eligible images on subsequent Generate clicks. This prevents a single
+  // exact match from being returned repeatedly.
+  ranked.sort((a, b) => b.score - a.score || a.image.id.localeCompare(b.image.id));
+  let selected = ranked[0]!;
+  if (previousImageId) {
+    const previousIndex = ranked.findIndex(candidate => candidate.image.id === previousImageId);
+    if (previousIndex >= 0) selected = ranked[(previousIndex + 1) % ranked.length]!;
+    else {
+      const randomValue = Math.min(0.999999999, Math.max(0, random()));
+      selected = ranked[Math.floor(randomValue * ranked.length)]!;
+    }
+  } else {
+    const randomValue = Math.min(0.999999999, Math.max(0, random()));
+    selected = ranked[Math.floor(randomValue * ranked.length)]!;
+  }
 
   return {
     ...selected,
