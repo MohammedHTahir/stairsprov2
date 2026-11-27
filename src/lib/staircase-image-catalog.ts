@@ -1,7 +1,7 @@
 export type StairLayout = 'straight' | 'l-shaped' | 'u-shaped' | 'spiral';
 export type WoodFinish = 'light-oak' | 'natural-oak' | 'walnut' | 'dark-walnut';
 export type MetalFinish = 'matte-black' | 'anthracite' | 'brushed-steel';
-export type StairStyle = 'mono-stringer' | 'central-spine';
+export type StairStyle = 'floating' | 'mono-stringer' | 'double-stringer' | 'zigzag' | 'central-spine' | 'side-stringer';
 export type EntryDirection = 'left' | 'right' | 'not-applicable';
 
 export type StaircaseConfiguration = {
@@ -462,7 +462,7 @@ const imageModules = import.meta.glob('/src/assets/stairs/**/*.{avif,gif,jpeg,jp
 const layouts = new Set<StairLayout>(['straight', 'l-shaped', 'u-shaped', 'spiral']);
 const woods = new Set<WoodFinish>(['light-oak', 'natural-oak', 'walnut', 'dark-walnut']);
 const metals = new Set<MetalFinish>(['matte-black', 'anthracite', 'brushed-steel']);
-const styles = new Set<StairStyle>(['mono-stringer', 'central-spine']);
+const styles = new Set<StairStyle>(['floating', 'mono-stringer', 'double-stringer', 'zigzag', 'central-spine', 'side-stringer']);
 
 function titleFromFilename(filename: string) {
   return filename.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
