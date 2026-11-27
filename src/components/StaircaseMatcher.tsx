@@ -137,11 +137,11 @@ export function StaircaseMatcher() {
             <DimensionField label="Tread depth" value={configuration.treadDepthMm ?? 280} onChange={value => update('treadDepthMm', value)} />
             <DimensionField label="Tread thickness" value={configuration.treadThicknessMm ?? 40} onChange={value => update('treadThicknessMm', value)} />
           </div>
-          <div className="rounded-lg bg-muted/60 p-3 text-xs leading-5 text-muted-foreground">Only central steel support-base / central-spine construction is supported. Floating/cantilevered, side-stringer, double-stringer and zig-zag structures are excluded. Every result must match the selected layout and landing count, and must show open risers and glass railings. Dimensions are retained as customer specifications and are never guessed from a photo.</div>
+          <div className="rounded-lg bg-muted/60 p-3 text-xs leading-5 text-muted-foreground">Only central steel support-base / central-spine construction is supported. Floating/cantilevered, side-stringer, double-stringer and zig-zag structures are excluded. Glass panels must follow the exposed stair and landing edges and be visibly secured with proper clamps, posts or side-mounted fittings; detached or floating-looking panels are not acceptable. Every result must match the selected layout and landing count. Dimensions are retained as customer specifications and are never guessed from a photo.</div>
           <Button className="h-12 w-full" onClick={findMatch}>
             {match ? <><Shuffle className="size-4" /> Show another design</> : <><Search className="size-4" /> Find my staircase</>}
           </Button>
-          <p className="text-center text-xs text-muted-foreground">{imageCount} verified staircase references currently available</p>
+          <p className="text-center text-xs text-muted-foreground">{imageCount} staircase image references in the catalog</p>
         </div>
       </section>
       <section className="min-w-0">
